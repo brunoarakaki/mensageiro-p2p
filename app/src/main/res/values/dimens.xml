@@ -1,0 +1,23 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="horizontal_margin">16dp</dimen>
+    <dimen name="vertical_margin">16dp</dimen>
+
+    <!--TEXT SIZES-->
+    <dimen name="text_headline">30sp</dimen>
+    <dimen name="text_large_title">22sp</dimen>
+    <dimen name="text_title">20sp</dimen>
+    <dimen name="text_large_body">18sp</dimen>
+    <dimen name="text_body">16sp</dimen>
+    <dimen name="text_small_body">14sp</dimen>
+
+    <!--PLACEHOLDERS-->
+    <dimen name="placeholder_default_icon_size">50dp</dimen>
+    <dimen name="placeholder_default_text_size">@dimen/text_title</dimen>
+
+    <!--DEFAULT-->
+    <dimen name="status_bar_size">25dp</dimen>
+
+    <dimen name="fab_margin">16dp</dimen>
+
+</resources>

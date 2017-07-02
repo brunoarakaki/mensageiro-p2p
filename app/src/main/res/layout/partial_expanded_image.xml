@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/expanded_image_background"
+                android:background="@color/color_black"
+                android:visibility="gone" >
+
+    <br.com.mobile2you.m2ybase.ui.widget.TouchImageView
+        android:id="@+id/expanded_image_tiv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ProgressBar
+        android:id="@+id/expanded_image_pb"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/expanded_image_iv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/activity_horizontal_margin"
+        android:src="@drawable/ic_close"
+        android:visibility="gone"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        />
+
+
+</RelativeLayout>

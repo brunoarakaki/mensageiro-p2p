@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="AppTextInputLayout">
+        <attr name="validation" format="boolean"/>
+        <attr name="emptinessIsValid" format="boolean"/>
+        <attr name="emptyErrorText" format="string"/>
+        <attr name="invalidErrorText" format="string"/>
+        <attr name="pattern" format="string"/>
+        <attr name="inputTextType" format="enum">
+            <enum name="custom" value="0"/>
+            <enum name="name" value="1"/>
+            <enum name="mail" value="2"/>
+            <enum name="date" value="3"/>
+            <enum name="phone" value="4"/>
+            <enum name="cep" value="5"/>
+            <enum name="creditCard" value="6"/>
+            <enum name="password" value="7"/>
+            <enum name="matching" value="8"/>
+            <enum name="cpf" value="9"/>
+            <enum name="cnpj" value="10"/>
+        </attr>
+        <attr name="minLength" format="integer"/>
+        <attr name="customMask" format="string"/>
+    </declare-styleable>
+</resources>

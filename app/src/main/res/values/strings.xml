@@ -1,0 +1,24 @@
+<resources>
+    <string name="google_maps_key"></string>
+    <string name="facebook_app_id"></string>
+
+    <!--DIALOG MESSAGES-->
+    <string name="progress_dialog_standard_msg">Aguarde um momento.</string>
+
+    <!--NETWORK ERRORS-->
+    <string name="network_error_timeout">Erro inesperado, por favor tente novamente.</string>
+    <string name="network_error_without_connection">Rede indisponível.</string>
+    <string name="network_error_unknown">Erro desconhecido, não foi possível completar sua requisição.</string>
+
+    <!--PLACEHOLDERS LABELS-->
+    <string name="placeholder_empty_label">Não existem resultados.</string>
+    <string name="placeholder_error_label">Houve um erro inesperado.</string>
+    <string name="placeholder_error_button_label">Tentar novamente</string>
+
+    <!--AppTextInputLayout DEFAULT FEEDBACKS-->
+    <string name="apptextinputlayout_invalid_field">Campo %s inválido.</string>
+    <string name="apptextinputlayout_empty_field">Campo %s não pode estar vazio.</string>
+    <string name="apptextinputlaoyut_password_field">A %1$s não pode conter menos de %2$d caracteres.</string>
+
+
+</resources>
