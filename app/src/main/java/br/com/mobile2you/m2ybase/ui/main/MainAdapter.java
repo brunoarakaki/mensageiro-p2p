@@ -2,9 +2,11 @@ package br.com.mobile2you.m2ybase.ui.main;
 
 import android.app.Activity;
 import android.content.Context;
+import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -57,7 +59,10 @@ public class MainAdapter extends BaseAdapter{
     public View getView(int i, View view, ViewGroup viewGroup) {
         view = ((Activity)mContext).getLayoutInflater()
                 .inflate(R.layout.item_list, viewGroup, false);
+        ((TextView) view.findViewById(R.id.contact_name)).setText(mPostsResponses.get(i).getBody());
         ((TextView) view.findViewById(R.id.question)).setText(mPostsResponses.get(i).getBody());
+        ((ImageView) view.findViewById(R.id.picture)).setImageResource(R.drawable.ic_smiley_face);
         return view;
     }
+
 }

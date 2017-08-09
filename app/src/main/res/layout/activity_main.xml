@@ -1,17 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".ui.main.MainActivity"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/my_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        android:background="?attr/colorPrimary"
+        />
+
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingBottom="@dimen/vertical_margin"
-    android:paddingLeft="@dimen/horizontal_margin"
-    android:paddingRight="@dimen/horizontal_margin"
-    android:paddingTop="@dimen/vertical_margin"
-    tools:context=".ui.main.MainActivity">
+    android:layout_height="match_parent">
 
     <ListView
         android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 </RelativeLayout>
+</LinearLayout>

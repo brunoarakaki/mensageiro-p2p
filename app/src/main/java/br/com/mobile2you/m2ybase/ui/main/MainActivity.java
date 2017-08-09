@@ -1,6 +1,7 @@
 package br.com.mobile2you.m2ybase.ui.main;
 
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.widget.ListView;
 
 import java.util.List;
@@ -32,9 +33,13 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mAdapter = new MainAdapter(this);
         mListView.setAdapter(mAdapter);
 
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
+
 //        mMainPresenter.loadQuestions();
         mMainPresenter.loadPosts();
     }
+
 
     @Override
     protected void onDestroy() {
