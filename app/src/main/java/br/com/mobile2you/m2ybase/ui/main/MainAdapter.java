@@ -27,17 +27,10 @@ import butterknife.ButterKnife;
 
 public class MainAdapter extends BaseRecyclerViewAdapter {
     private List<PostsResponse> mPostsResponses = new ArrayList<>();
-    private Context mContext;
-
-    public MainAdapter(Context context, View.OnClickListener tryAgainClickListener) {
-        this(tryAgainClickListener);
-        mContext = context;
-    }
 
     public MainAdapter(View.OnClickListener tryAgainClickListener) {
         super(tryAgainClickListener);
     }
-
 
     public void setPosts(List<PostsResponse> posts) {
         mPostsResponses = posts;
@@ -51,12 +44,14 @@ public class MainAdapter extends BaseRecyclerViewAdapter {
 
     @Override
     public void onBindRecyclerViewHolder(RecyclerView.ViewHolder holder, int position) {
-        ((ConctactViewHolder) holder).SetContactView(mPostsResponses.get(position));
+        if(holder instanceof ConctactViewHolder) {
+            ((ConctactViewHolder) holder).SetContactView(mPostsResponses.get(position));
+        }
     }
 
     @Override
     protected RecyclerView.ViewHolder getItemViewHolder(ViewGroup parent) {
-        View itemView = LayoutInflater.from(mContext).inflate(R.layout.item_list, parent, false);
+        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list, parent, false);
         return new ConctactViewHolder(itemView);
     }
 

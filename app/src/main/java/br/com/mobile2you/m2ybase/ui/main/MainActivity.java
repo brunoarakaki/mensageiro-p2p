@@ -35,9 +35,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mMainPresenter = new MainPresenter();
         mMainPresenter.attachView(this);
 
-//        mLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        mAdapter = new MainAdapter(this, new View.OnClickListener() {
+        mAdapter = new MainAdapter(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showToast("Nice job, you are trying again");
