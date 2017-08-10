@@ -57,7 +57,6 @@ dependencies {
     final DAGGER_VERSION = '2.5'
 
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
     //SUPPORT
     compile "com.android.support:appcompat-v7:$SUPPORT_LIBRARY_VERSION"
     compile "com.android.support:recyclerview-v7:$SUPPORT_LIBRARY_VERSION"
@@ -66,7 +65,6 @@ dependencies {
     compile "com.squareup.retrofit2:retrofit:$RETROFIT_VERSION"
     compile "com.squareup.retrofit2:converter-gson:$RETROFIT_VERSION"
     compile "com.squareup.retrofit2:adapter-rxjava:$RETROFIT_VERSION"
-    compile 'com.squareup.okhttp3:logging-interceptor:3.5.0'
     //DAGGER
     compile "com.google.dagger:dagger:$DAGGER_VERSION"
     annotationProcessor "com.google.dagger:dagger-compiler:$DAGGER_VERSION"
@@ -74,15 +72,18 @@ dependencies {
     compile "com.jakewharton:butterknife:$BUTTERKNIFE_VERSION"
     annotationProcessor "com.jakewharton:butterknife-compiler:$BUTTERKNIFE_VERSION"
     //BUS
-    compile 'com.squareup:otto:1.3.8'
     //RX
-    compile 'io.reactivex:rxandroid:1.2.0'
     //GLIDE
-    compile 'com.github.bumptech.glide:glide:3.7.0'
-    compile 'jp.wasabeef:glide-transformations:2.0.1'
     //FABRIC
     compile('com.crashlytics.sdk.android:crashlytics:2.6.5@aar') {
         transitive = true;
     }
 
+    compile 'com.squareup.okhttp3:logging-interceptor:3.5.0'
+    compile 'com.squareup:otto:1.3.8'
+    compile 'io.reactivex:rxandroid:1.2.0'
+    compile 'com.github.bumptech.glide:glide:3.7.0'
+    compile 'jp.wasabeef:glide-transformations:2.0.1'
+    compile 'com.android.support.constraint:constraint-layout:+'
+    testCompile 'junit:junit:4.12'
 }

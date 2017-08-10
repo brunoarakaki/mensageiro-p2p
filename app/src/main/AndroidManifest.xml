@@ -11,13 +11,11 @@
     <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES" />
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
 
-    <!--<permission-->
-        <!--android:name="com.parse.starter.permission.C2D_MESSAGE"-->
-        <!--android:protectionLevel="signature" />-->
-
+    <!-- <permission -->
+    <!-- android:name="com.parse.starter.permission.C2D_MESSAGE" -->
+    <!-- android:protectionLevel="signature" /> -->
     <!-- MUDAR NOME PACOTE -->
-    <!--<uses-permission android:name="br.com.mobile2you.pizzaprime.pizzaprime.permission.C2D_MESSAGE" />-->
-
+    <!-- <uses-permission android:name="br.com.mobile2you.pizzaprime.pizzaprime.permission.C2D_MESSAGE" /> -->
     <application
         android:name=".BaseApplication"
         android:allowBackup="true"
@@ -32,9 +30,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <meta-data
             android:name="io.fabric.ApiKey"
             android:value="d9aa34977d8b9166187cc83674aea00089585509" />
+
+        <activity android:name=".ui.chat.ChatActivity"></activity>
     </application>
 
 </manifest>

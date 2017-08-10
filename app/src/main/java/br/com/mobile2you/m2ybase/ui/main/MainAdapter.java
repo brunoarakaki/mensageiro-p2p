@@ -3,6 +3,7 @@ package br.com.mobile2you.m2ybase.ui.main;
 import android.app.Activity;
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -13,56 +14,67 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.com.mobile2you.m2ybase.R;
-import br.com.mobile2you.m2ybase.data.remote.models.PollsResponse;
 import br.com.mobile2you.m2ybase.data.remote.models.PostsResponse;
+import br.com.mobile2you.m2ybase.ui.base.BaseRecyclerViewAdapter;
+
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 /**
  * Created by mobile2you on 28/11/16.
  */
 
-public class MainAdapter extends BaseAdapter{
-    private List<PollsResponse> mPollsResponses = new ArrayList<>();
+public class MainAdapter extends BaseRecyclerViewAdapter {
     private List<PostsResponse> mPostsResponses = new ArrayList<>();
     private Context mContext;
 
-
-    public MainAdapter(Context context) {
+    public MainAdapter(Context context, View.OnClickListener tryAgainClickListener) {
+        this(tryAgainClickListener);
         mContext = context;
     }
 
+    public MainAdapter(View.OnClickListener tryAgainClickListener) {
+        super(tryAgainClickListener);
+    }
+
+
+    public void setPosts(List<PostsResponse> posts) {
+        mPostsResponses = posts;
+        notifyDataChanged();
+    }
+
     @Override
-    public int getCount() {
+    public int getDisplayableItemsCount() {
         return mPostsResponses.size();
     }
 
     @Override
-    public Object getItem(int i) {
-        return null;
+    public void onBindRecyclerViewHolder(RecyclerView.ViewHolder holder, int position) {
+        ((ConctactViewHolder) holder).SetContactView(mPostsResponses.get(position));
     }
 
     @Override
-    public long getItemId(int i) {
-        return 0;
+    protected RecyclerView.ViewHolder getItemViewHolder(ViewGroup parent) {
+        View itemView = LayoutInflater.from(mContext).inflate(R.layout.item_list, parent, false);
+        return new ConctactViewHolder(itemView);
     }
 
-    public void setPollsResponses(List<PollsResponse> pollsResponses) {
-        mPollsResponses = pollsResponses;
-        notifyDataSetChanged();
-    }
+    class ConctactViewHolder extends RecyclerView.ViewHolder{
+        @BindView(R.id.contact_name) TextView mNameTextView;
+        @BindView(R.id.question) TextView mLastMessageTextView;
+        @BindView(R.id.picture) ImageView mPictureImageView;
 
-    public void setPosts(List<PostsResponse> posts) {
-        mPostsResponses = posts;
-        notifyDataSetChanged();
-    }
+        public ConctactViewHolder(View itemView) {
+            super(itemView);
+            ButterKnife.bind(this, itemView);
+        }
 
-    @Override
-    public View getView(int i, View view, ViewGroup viewGroup) {
-        view = ((Activity)mContext).getLayoutInflater()
-                .inflate(R.layout.item_list, viewGroup, false);
-        ((TextView) view.findViewById(R.id.contact_name)).setText(mPostsResponses.get(i).getBody());
-        ((TextView) view.findViewById(R.id.question)).setText(mPostsResponses.get(i).getBody());
-        ((ImageView) view.findViewById(R.id.picture)).setImageResource(R.drawable.ic_smiley_face);
-        return view;
+        public void SetContactView(PostsResponse postsResponse){
+            mNameTextView.setText(postsResponse.getBody());
+            mLastMessageTextView.setText(postsResponse.getBody());
+            mPictureImageView.setImageResource(R.drawable.ic_smiley_face);
+        }
     }
 
 }
