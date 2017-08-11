@@ -21,7 +21,6 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
     private MainPresenter mMainPresenter;
     private MainAdapter mAdapter;
-    private LinearLayoutManager mLinearLayoutManager;
 
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
@@ -36,11 +35,17 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mMainPresenter.attachView(this);
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        mAdapter = new MainAdapter(new View.OnClickListener() {
+        mAdapter = new MainAdapter(new MainAdapter.OnClicked() {
             @Override
-            public void onClick(View v) {
+            public void onContactClicked(PostsResponse postsResponse) {
                 showToast("Nice job, you are trying again");
             }
+        },
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showToast("Nice job, you are trying again");
+                }
         });
         mRecyclerView.setAdapter(mAdapter);
         setActionBar("Mensageiro P2P");
