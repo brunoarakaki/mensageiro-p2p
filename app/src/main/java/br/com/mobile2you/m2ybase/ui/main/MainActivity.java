@@ -1,5 +1,6 @@
 package br.com.mobile2you.m2ybase.ui.main;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -14,6 +15,7 @@ import br.com.mobile2you.m2ybase.R;
 import br.com.mobile2you.m2ybase.data.remote.models.PollsResponse;
 import br.com.mobile2you.m2ybase.data.remote.models.PostsResponse;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
+import br.com.mobile2you.m2ybase.ui.chat.ChatActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -38,7 +40,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mAdapter = new MainAdapter(new MainAdapter.OnClicked() {
             @Override
             public void onContactClicked(PostsResponse postsResponse) {
-                showToast("Nice job, you are trying again");
+                Intent chatIntent = new Intent(getApplicationContext(), ChatActivity.class);
+                startActivity(chatIntent);
             }
         },
             new View.OnClickListener() {
