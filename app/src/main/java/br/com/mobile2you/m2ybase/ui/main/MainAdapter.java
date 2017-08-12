@@ -38,12 +38,6 @@ public class MainAdapter extends BaseRecyclerViewAdapter {
         notifyDataChanged();
     }
 
-    private PublishSubject<View> mViewClickSubject = PublishSubject.create();
-
-    public Observable<View> getViewClickedObservable() {
-        return mViewClickSubject.asObservable();
-    }
-
     @Override
     public int getDisplayableItemsCount() {
         return mPostsResponses.size();
