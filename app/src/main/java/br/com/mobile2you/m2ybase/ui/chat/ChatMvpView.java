@@ -10,7 +10,11 @@ import br.com.mobile2you.m2ybase.ui.base.MvpView;
  */
 
 public interface ChatMvpView extends MvpView {
+    long saveMessage(MessageResponse message);
+
     void showMessages(List<MessageResponse> messages);
+
+    void loadContactMessages(int user_id, int sender_id);
 
     void showEmptyMessages();
 

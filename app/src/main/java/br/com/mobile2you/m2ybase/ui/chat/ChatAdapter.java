@@ -63,7 +63,7 @@ public class ChatAdapter extends BaseRecyclerViewAdapter {
         public void Bind(final MessageResponse messageResponse){
             mSenderTextView.setText(String.valueOf(messageResponse.getSenderId()));
             mContentTextView.setText(messageResponse.getText());
-            mTimestampTextView.setText(messageResponse.getSendedAt().toString());
+            mTimestampTextView.setText(messageResponse.getSentAt().toString());
         }
     }
 }

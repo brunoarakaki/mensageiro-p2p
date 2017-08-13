@@ -9,34 +9,43 @@ import java.util.Calendar;
 
 public class MessageResponse {
     private int senderId;
-    private int groupId;
+    private int receiverId;
     private String text;
-    private Timestamp sendedAt;
+    private Timestamp sentAt;
 
-    public MessageResponse(int senderId, String text, int groupId) {
+    public MessageResponse(int senderId, String text, int receiverId) {
         super();
         this.senderId = senderId;
-        this.groupId = groupId;
+        this.receiverId = receiverId;
         this.text = text;
 
         Calendar calendar = Calendar.getInstance();
         java.util.Date now = calendar.getTime();
-        this.sendedAt = new Timestamp(now.getTime());
+        this.sentAt = new Timestamp(now.getTime());
+    }
+
+    public MessageResponse(int senderId, String text, int receiverId, Timestamp sentAt) {
+        super();
+        this.senderId = senderId;
+        this.receiverId = receiverId;
+        this.text = text;
+        this.sentAt = sentAt;
     }
 
     public int getSenderId() {
         return senderId;
     }
 
-    public int getGroupId() {
-        return groupId;
+    public int getReceiverId() {
+        return receiverId;
     }
 
     public String getText() {
         return text;
     }
 
-    public Timestamp getSendedAt() {
-        return sendedAt;
+    public Timestamp getSentAt() {
+        return sentAt;
     }
+
 }
