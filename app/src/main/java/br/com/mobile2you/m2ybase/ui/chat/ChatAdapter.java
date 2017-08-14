@@ -31,6 +31,10 @@ public class ChatAdapter extends BaseRecyclerViewAdapter {
         notifyDataChanged();
     }
 
+    public List<MessageResponse> getMessages() {
+        return mMessages;
+    }
+
     @Override
     public int getDisplayableItemsCount() {
         return mMessages.size();

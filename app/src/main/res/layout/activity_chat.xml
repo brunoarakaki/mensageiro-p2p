@@ -31,19 +31,23 @@
         <RelativeLayout
             android:id="@+id/chat_text_layout"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="wrap_content"
+            android:minHeight="60dp"
             android:layout_alignParentBottom="true"
             android:background="?attr/colorPrimary">
             <Button
                 android:id="@+id/send_message_button"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"
                 android:text="send"/>
+
             <android.support.design.widget.TextInputEditText
+                android:id="@+id/message_edit_text"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="60dp"
                 android:layout_alignParentTop="true"
                 android:layout_toLeftOf="@id/send_message_button"
                 android:layout_toStartOf="@id/send_message_button"

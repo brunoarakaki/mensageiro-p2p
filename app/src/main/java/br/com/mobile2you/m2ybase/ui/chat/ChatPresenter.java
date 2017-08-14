@@ -14,6 +14,7 @@ import rx.Subscription;
 public class ChatPresenter extends BasePresenter<ChatMvpView> {
 
     private ChatMvpView mChatMvpView;
+    private List<MessageResponse> mCachedMessages;
     private Subscription mSubscription;
 
     public ChatPresenter(){
@@ -57,6 +58,7 @@ public class ChatPresenter extends BasePresenter<ChatMvpView> {
     }
 
     public void sendMessage(MessageResponse messageResponse){
+        mChatMvpView.addMessage(messageResponse);
         long id = mChatMvpView.saveMessage(messageResponse);
     }
 
