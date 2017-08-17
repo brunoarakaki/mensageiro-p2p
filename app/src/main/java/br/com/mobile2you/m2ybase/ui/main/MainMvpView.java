@@ -2,6 +2,7 @@ package br.com.mobile2you.m2ybase.ui.main;
 
 import java.util.List;
 
+import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.remote.models.PollsResponse;
 import br.com.mobile2you.m2ybase.data.remote.models.PostsResponse;
 import br.com.mobile2you.m2ybase.ui.base.MvpView;
@@ -11,14 +12,13 @@ import br.com.mobile2you.m2ybase.ui.base.MvpView;
  */
 
 public interface MainMvpView extends MvpView {
-    void showQuestions(List<PollsResponse> polls);
 
-    void showEmptyQuestions();
+    void showEmptyContacts();
 
     void showError(String error);
 
     void showProgress(boolean show);
 
-    void showPosts(List<PostsResponse> posts);
+    void showContacts(List<Contact> contacts);
 }
 
