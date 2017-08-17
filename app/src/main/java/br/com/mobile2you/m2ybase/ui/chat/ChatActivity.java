@@ -121,6 +121,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     @Override
     public void showMessages(List<MessageResponse> messages) {
         mAdapter.setMessages(messages);
+        mRecyclerView.scrollToPosition(messages.size() - 1);
     }
 
     @Override
