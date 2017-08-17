@@ -29,8 +29,8 @@ public class ContactDatabaseHelper {
         }
 
         Cursor cursor =  db.rawQuery("select " +
-                Constants.DB_CONTACT_FIELD_NAME + ", " +
-            Constants.DB_CONTACT_FIELD_ID +  " from " +
+                Constants.DB_CONTACT_FIELD_ID + ", " +
+            Constants.DB_CONTACT_FIELD_NAME +  " from " +
             Constants.DB_CONTACTS_TABLE ,  new String[] {});
         return convertCursorToContacts(cursor);
     }
@@ -58,7 +58,6 @@ public class ContactDatabaseHelper {
 
     private ContentValues convertContactToContentValues(Contact contact){
         ContentValues contentValues = new ContentValues();
-        contentValues.put(Constants.DB_CONTACT_FIELD_ID, contact.getId());
         contentValues.put(Constants.DB_CONTACT_FIELD_NAME, contact.getName());
         return contentValues;
     }

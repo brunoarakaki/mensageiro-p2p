@@ -15,6 +15,7 @@ import android.widget.ListView;
 
 import java.util.List;
 
+import br.com.mobile2you.m2ybase.Constants;
 import br.com.mobile2you.m2ybase.R;
 import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.remote.models.PollsResponse;
@@ -46,13 +47,15 @@ public class MainActivity extends BaseActivity implements MainMvpView {
             @Override
             public void onContactClicked(Contact contact) {
                 Intent chatIntent = new Intent(getApplicationContext(), ChatActivity.class);
+                chatIntent.putExtra(Constants.EXTRA_CONTACT_ID, contact.getId());
+                chatIntent.putExtra(Constants.EXTRA_CONTACT_NAME, contact.getName());
                 startActivity(chatIntent);
             }
         },
             new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    showToast("Nice job, you are trying again");
+                    mMainPresenter.loadContacts(v.getContext());
                 }
         });
         mRecyclerView.setAdapter(mAdapter);

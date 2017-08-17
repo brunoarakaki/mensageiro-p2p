@@ -22,6 +22,8 @@ public class Constants {
 
     public static final String EXTRA_ACTIVITY_TITLE = PACKAGE_NAME + "EXTRA_ACTIVITY_TITLE";
     public static final String EXTRA_URL = PACKAGE_NAME + "EXTRA_URL";
+    public static final String EXTRA_CONTACT_ID = PACKAGE_NAME + "EXTRA_CONTACT_ID";
+    public static final String EXTRA_CONTACT_NAME = PACKAGE_NAME + "EXTRA_CONTACT_NAME";
 
 
 //    public static final String PARSE_APP_ID = "Tu3tFfazCKY9KrQkw3CwkXzkpE8RjEHhqCjvAYkB";
