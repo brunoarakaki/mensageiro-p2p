@@ -1,7 +1,11 @@
 package br.com.mobile2you.m2ybase.ui.main;
 
+import android.content.Context;
+
 import java.util.List;
 
+import br.com.mobile2you.m2ybase.data.local.Contact;
+import br.com.mobile2you.m2ybase.data.local.ContactDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.remote.ApiaryDataManager;
 import br.com.mobile2you.m2ybase.data.remote.JsonPlaceholderDataManager;
 import br.com.mobile2you.m2ybase.data.remote.models.PollsResponse;
@@ -22,7 +26,7 @@ public class MainPresenter extends BasePresenter<MainMvpView> {
     private MainMvpView mMainMvpView;
     private Subscription mSubscription;
     private ApiaryDataManager mApiaryDataManager;
-    private List<PollsResponse> mCachedPolls;
+    private List<Contact> mCachedContacts;
     private JsonPlaceholderDataManager mPlaceholderDataManager;
 
     public MainPresenter() {
@@ -61,44 +65,60 @@ public class MainPresenter extends BasePresenter<MainMvpView> {
 
                     @Override
                     public void onNext(List<PostsResponse> postsResponses) {
-                        mMainMvpView.showPosts(postsResponses);
+//                        mMainMvpView.showPosts(postsResponses);
                     }
                 });
     }
 
-    public void loadQuestions() {
-        mMainMvpView.showProgress(true);
-        mSubscription = getPollsOberservable().subscribe(new Subscriber<List<PollsResponse>>() {
-            @Override
-            public void onCompleted() {
-                mMainMvpView.showProgress(false);
-            }
+//    public void loadQuestions() {
+//        mMainMvpView.showProgress(true);
+//        mSubscription = getPollsOberservable().subscribe(new Subscriber<List<PollsResponse>>() {
+//            @Override
+//            public void onCompleted() {
+//                mMainMvpView.showProgress(false);
+//            }
+//
+//            @Override
+//            public void onError(Throwable e) {
+//                mMainMvpView.showProgress(false);
+//                mMainMvpView.showError(e.getMessage());
+//            }
+//
+//            @Override
+//            public void onNext(List<PollsResponse> pollsResponses) {
+//                mCachedPolls = pollsResponses;
+//                if (pollsResponses.isEmpty()) {
+//                    mMainMvpView.showEmptyQuestions();
+//                } else {
+//                    mMainMvpView.showQuestions(pollsResponses);
+//                }
+//            }
+//        });
+//    }
 
-            @Override
-            public void onError(Throwable e) {
-                mMainMvpView.showProgress(false);
-                mMainMvpView.showError(e.getMessage());
-            }
+    public void loadContacts(Context context){
+        ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
+        mCachedContacts = dbHelper.getContacts();
+        mMainMvpView.showContacts(mCachedContacts);
+    }
 
-            @Override
-            public void onNext(List<PollsResponse> pollsResponses) {
-                mCachedPolls = pollsResponses;
-                if (pollsResponses.isEmpty()) {
-                    mMainMvpView.showEmptyQuestions();
-                } else {
-                    mMainMvpView.showQuestions(pollsResponses);
-                }
-            }
-        });
+    public void addContact(Context context, String name){
+        ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
+        Contact contact = new Contact(name);
+        long contactId = dbHelper.add(contact);
+        contact.setId((int)contactId);
+        mCachedContacts.add(contact);
+        mMainMvpView.showContacts(mCachedContacts);
+
     }
 
     private Observable<List<PollsResponse>> getPollsOberservable() {
-        if (mCachedPolls != null) {
-            return Observable.just(mCachedPolls);
-        } else {
+//        if (mCachedPolls != null) {
+//            return Observable.just(mCachedPolls);
+//        } else {
             return mApiaryDataManager.deletePolls()
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribeOn(Schedulers.io());
-        }
+//        }
     }
 }

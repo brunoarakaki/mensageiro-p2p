@@ -10,6 +10,7 @@ import android.widget.Button;
 
 import java.util.List;
 
+import br.com.mobile2you.m2ybase.Constants;
 import br.com.mobile2you.m2ybase.R;
 import br.com.mobile2you.m2ybase.data.local.MessageDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
@@ -21,7 +22,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
 
     private ChatPresenter mPresenter;
     private ChatAdapter mAdapter;
-
+    private int mContactId;
 
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
@@ -38,12 +39,16 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         mPresenter = new ChatPresenter();
         mPresenter.attachView(this);
 
+        Bundle extras = getIntent().getExtras();
+        mContactId = extras.getInt(Constants.EXTRA_CONTACT_ID);
+        String contactName = extras.getString(Constants.EXTRA_CONTACT_NAME);
+
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String text = mMessageEditText.getText().toString();
                 if(!text.isEmpty()){
-                    MessageResponse message = new MessageResponse(0,text, 2);
+                    MessageResponse message = new MessageResponse(0,text, mContactId);
                     mPresenter.sendMessage(message);
                     mMessageEditText.setText("");
                 } else {
@@ -53,10 +58,8 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         });
 
         setRecyclerView();
-        setActionBar("Nome do contatinho", true);
-//        TODO: load messages calling presenter
-//        mPresenter.dummyData();
-        mPresenter.loadMessages(0, 2);
+        setActionBar(contactName, true);
+        mPresenter.loadMessages(0, mContactId);
     }
 
     @Override
@@ -118,6 +121,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     @Override
     public void showMessages(List<MessageResponse> messages) {
         mAdapter.setMessages(messages);
+        mRecyclerView.scrollToPosition(messages.size() - 1);
     }
 
     @Override

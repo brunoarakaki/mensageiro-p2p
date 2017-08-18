@@ -11,21 +11,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.com.mobile2you.m2ybase.R;
+import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.remote.models.PostsResponse;
 import br.com.mobile2you.m2ybase.ui.base.BaseRecyclerViewAdapter;
 
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import rx.Observable;
-import rx.subjects.PublishSubject;
 
 /**
  * Created by mobile2you on 28/11/16.
  */
 
 public class MainAdapter extends BaseRecyclerViewAdapter {
-    private List<PostsResponse> mPostsResponses = new ArrayList<>();
+    private List<Contact> mContacts = new ArrayList<>();
     private OnClicked mClickListener;
 
     public MainAdapter(OnClicked clickListener, View.OnClickListener tryAgainClickListener) {
@@ -33,20 +32,20 @@ public class MainAdapter extends BaseRecyclerViewAdapter {
         mClickListener = clickListener;
     }
 
-    public void setPosts(List<PostsResponse> posts) {
-        mPostsResponses = posts;
+    public void setContacts(List<Contact> contacts) {
+        mContacts = contacts;
         notifyDataChanged();
     }
 
     @Override
     public int getDisplayableItemsCount() {
-        return mPostsResponses.size();
+        return mContacts.size();
     }
 
     @Override
     public void onBindRecyclerViewHolder(RecyclerView.ViewHolder holder, int position) {
         if(holder instanceof ConctactViewHolder) {
-            ((ConctactViewHolder) holder).Bind(mPostsResponses.get(position));
+            ((ConctactViewHolder) holder).Bind(mContacts.get(position));
         }
     }
 
@@ -58,7 +57,7 @@ public class MainAdapter extends BaseRecyclerViewAdapter {
 
 
     public interface OnClicked {
-        void onContactClicked(PostsResponse postsResponse);
+        void onContactClicked(Contact contact);
 
     }
 
@@ -72,14 +71,14 @@ public class MainAdapter extends BaseRecyclerViewAdapter {
             ButterKnife.bind(this, itemView);
         }
 
-        public void Bind(final PostsResponse postsResponse){
-            mNameTextView.setText(postsResponse.getBody());
-            mLastMessageTextView.setText(postsResponse.getBody());
+        public void Bind(final Contact contact){
+            mNameTextView.setText(contact.getName());
+            mLastMessageTextView.setText("Last message");
             mPictureImageView.setImageResource(R.drawable.ic_smiley_face);
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    mClickListener.onContactClicked(postsResponse);
+                    mClickListener.onContactClicked(contact);
                 }
             });
         }

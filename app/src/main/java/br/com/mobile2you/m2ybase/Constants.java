@@ -22,11 +22,24 @@ public class Constants {
 
     public static final String EXTRA_ACTIVITY_TITLE = PACKAGE_NAME + "EXTRA_ACTIVITY_TITLE";
     public static final String EXTRA_URL = PACKAGE_NAME + "EXTRA_URL";
+    public static final String EXTRA_CONTACT_ID = PACKAGE_NAME + "EXTRA_CONTACT_ID";
+    public static final String EXTRA_CONTACT_NAME = PACKAGE_NAME + "EXTRA_CONTACT_NAME";
 
 
 //    public static final String PARSE_APP_ID = "Tu3tFfazCKY9KrQkw3CwkXzkpE8RjEHhqCjvAYkB";
 //    public static final String PARSE_APPCLIENT = "cpfPBghgaHvTgjdPwsgxdmVLaCmGz58dBFjWYfKK";
 //    public static final String FIREBASe_SENDER_KEY = "354006123142";
 //    public static final int REQUEST_EXIT = 0;
+
+//    DATABSE CONSTANTS
+    public static final String DB_CONTACTS_TABLE = "contacts";
+    public static final String DB_CONTACT_FIELD_ID = "_id";
+    public static final String DB_CONTACT_FIELD_NAME = "name";
+    public static final String DB_MESSAGES_TABLE = "messages";
+    public static final String DB_MESSAGES_FIELD_MESSAGE_ID = "_id";
+    public static final String DB_MESSAGES_FIELD_SENDER_ID = "sender_id";
+    public static final String DB_MESSAGES_FIELD_RECEIVER_ID = "receiver_id";
+    public static final String DB_MESSAGES_FIELD_TEXT = "text";
+    public static final String DB_MESSAGES_FIELD_SENT_AT = "sent_at";
 }
 
