@@ -1,6 +1,7 @@
 package br.com.mobile2you.m2ybase.ui.chat;
 
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +28,7 @@ public class ChatAdapter extends BaseRecyclerViewAdapter {
     }
 
     public void setMessages(List<MessageResponse> messages) {
+        Log.d("Adapter", "trocou");
         mMessages = messages;
         notifyDataChanged();
     }
@@ -65,7 +67,7 @@ public class ChatAdapter extends BaseRecyclerViewAdapter {
         }
 
         public void Bind(final MessageResponse messageResponse){
-            mSenderTextView.setText(String.valueOf(messageResponse.getSenderId()));
+            mSenderTextView.setText(messageResponse.getSender().getName());
             mContentTextView.setText(messageResponse.getText());
             mTimestampTextView.setText(messageResponse.getSentAt().toString());
         }

@@ -19,11 +19,15 @@ public class BaseSQLiteOpenHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("create table " + Constants.DB_CONTACTS_TABLE + " (" +
                 Constants.DB_CONTACT_FIELD_ID + " integer primary key autoincrement, " +
-                Constants.DB_CONTACT_FIELD_NAME + " text)");
+                Constants.DB_CONTACT_FIELD_NAME + " text, " +
+                Constants.DB_CONTACT_FIELD_IP + " text)"
+        );
         db.execSQL("create table " + Constants.DB_MESSAGES_TABLE + " (" +
                 Constants.DB_MESSAGES_FIELD_MESSAGE_ID + " integer primary key autoincrement, " +
                 Constants.DB_MESSAGES_FIELD_SENDER_ID + " integer key, " +
                 Constants.DB_MESSAGES_FIELD_RECEIVER_ID + " integer key, " +
+                Constants.DB_MESSAGES_FIELD_SENDER_NAME + " text, " +
+                Constants.DB_MESSAGES_FIELD_RECEIVER_NAME + " text, " +
                 Constants.DB_MESSAGES_FIELD_TEXT + " text, " +
                 Constants.DB_MESSAGES_FIELD_SENT_AT + " DATETIME)");
     }

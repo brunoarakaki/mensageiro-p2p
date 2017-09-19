@@ -3,16 +3,23 @@ import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import br.com.mobile2you.m2ybase.Constants;
 import br.com.mobile2you.m2ybase.R;
+import br.com.mobile2you.m2ybase.data.local.Contact;
+import br.com.mobile2you.m2ybase.data.local.DHT;
 import br.com.mobile2you.m2ybase.data.local.MessageDatabaseHelper;
+import br.com.mobile2you.m2ybase.data.local.ReceiverThread;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
 import butterknife.BindView;
@@ -23,6 +30,9 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     private ChatPresenter mPresenter;
     private ChatAdapter mAdapter;
     private int mContactId;
+    private DHT dht;
+    private ReceiverThread receiver;
+    private Timer connectionTimer;
 
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
@@ -39,23 +49,56 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         mPresenter = new ChatPresenter();
         mPresenter.attachView(this);
 
+        try {
+            this.dht = new DHT();
+            this.receiver = new ReceiverThread(dht, mPresenter);
+            new Thread(receiver).start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         Bundle extras = getIntent().getExtras();
         mContactId = extras.getInt(Constants.EXTRA_CONTACT_ID);
         String contactName = extras.getString(Constants.EXTRA_CONTACT_NAME);
+        final String contactIp = extras.getString(Constants.EXTRA_CONTACT_IP);
 
+        final Contact me = new Contact(dht.id.toString());
+        me.setPeerId(dht.id.toString());
+        final Contact friend = new Contact(contactName);
+
+        Log.d("DHT", "Contact IP: " + contactIp);
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String text = mMessageEditText.getText().toString();
                 if(!text.isEmpty()){
-                    MessageResponse message = new MessageResponse(0,text, mContactId);
+                    MessageResponse message = new MessageResponse(me, friend, text);
                     mPresenter.sendMessage(message);
                     mMessageEditText.setText("");
+                    try {
+                        dht.send(message);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 } else {
                     hideSoftKeyboard();
                 }
             }
         });
+
+        connectionTimer = new Timer();
+        connectionTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    if (dht.connectTo(contactIp)) {
+                        this.cancel();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }, 0, 3000);
 
         setRecyclerView();
         setActionBar(contactName, true);
@@ -116,6 +159,9 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     protected void onDestroy() {
         super.onDestroy();
         mPresenter.detachView();
+        receiver.cancel();
+        dht.shutDown();
+        connectionTimer.cancel();
     }
 
     @Override
