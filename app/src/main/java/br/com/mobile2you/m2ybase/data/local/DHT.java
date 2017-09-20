@@ -5,6 +5,7 @@ package br.com.mobile2you.m2ybase.data.local;
  */
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.wifi.WifiConfiguration;
@@ -41,17 +42,18 @@ import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
 
 public class DHT {
 
-    public Number160 id;
+    public Number160 serverId;
+    public Number160 clientId;
     public PeerDHT serverPeer;
     public PeerDHT clientPeer;
     public Boolean started = false;
     public Boolean isConnected = false;
     public InetAddress connectedIP;
     public InetAddress ip;
-    Map<Integer, MessageResponse> messages;
 
     final int keyStore = 12345;
-    final int port = 4001;
+    final int serverPort = 4001;
+    final int clientPort = 4002;
 
     public DHT() throws Exception {
         this((new Random()).nextInt());
@@ -59,17 +61,15 @@ public class DHT {
 
     public DHT(int id) throws Exception {
 
-        this.id = new Number160(id);
+        this.serverId = new Number160(id);
         String serverIp = Utils.getIPAddress(true);
         try {
             this.ip = InetAddress.getByName(serverIp);
             Bindings b = new Bindings();
-//            b.addInterface("eth0");
             b.addAddress(this.ip);
-            this.serverPeer = new PeerBuilderDHT(new PeerBuilder(this.id).behindFirewall().ports(port).start()).start();
-            messages = new HashMap<Integer, MessageResponse>();
+            this.serverPeer = new PeerBuilderDHT(new PeerBuilder(this.serverId).bindings(b).ports(serverPort).start()).start();
             this.started = true;
-            Log.d("DHT", "Peer created. ID: " + this.id);
+            Log.d("DHT", "Peer created. ID: " + this.serverId);
         } catch (Exception e) {
             Log.d("DHT", "Impossible to bind to this IP address");
         }
@@ -80,23 +80,24 @@ public class DHT {
             Log.d("DHT", "DHT service not started!");
             return false;
         }
-        PeerAddress bootStrapServer = new PeerAddress(Number160.ZERO, InetAddress.getByName(address), port, port, port + 1);
-        FutureDiscover fd = peer.peer().discover().peerAddress(bootStrapServer).start();
+        this.clientId = new Number160((new Random()).nextInt());
+        this.clientPeer = new PeerBuilderDHT(new PeerBuilder(this.clientId).ports(clientPort).behindFirewall().start()).start();
+        PeerAddress bootStrapServer = new PeerAddress(Number160.ZERO, InetAddress.getByName(address), serverPort, serverPort, serverPort + 1);
+        FutureDiscover fd = this.clientPeer.peer().discover().peerAddress(bootStrapServer).start();
         Log.d("DHT", "Trying to connect...");
         fd.awaitUninterruptibly();
         if (fd.isSuccess()) {
             Log.d("DHT", "Outside address: " + fd.peerAddress().inetAddress().getHostName());
         } else {
-            Log.d("DHT", "FAILED: " + fd.failedReason());
+            Log.d("DHT", "Couldn't get outside address: " + fd.failedReason());
         }
-        Log.d("DHT", fd.reporter().inetAddress().getHostName());
         bootStrapServer = fd.reporter();
-        FutureBootstrap bootstrap = peer.peer().bootstrap().peerAddress(bootStrapServer).start();
+        FutureBootstrap bootstrap = this.clientPeer.peer().bootstrap().peerAddress(bootStrapServer).start();
         bootstrap.awaitUninterruptibly();
         if (bootstrap.isSuccess()) {
             this.isConnected = true;
             this.connectedIP = InetAddress.getByName(address);
-            Log.d("DHT", "Connected!" + peer.peerBean().peerMap().all());
+            Log.d("DHT", "Connected!" + this.clientPeer.peerBean().peerMap().all());
             return true;
         } else {
             Log.d("DHT", "Could not connect!");
@@ -109,35 +110,43 @@ public class DHT {
             Log.d("DHT", "DHT service not started!");
             return null;
         }
-        FutureGet fget = serverPeer.get(new Number160(keyStore)).all().start();
-        fget.awaitUninterruptibly();
-        Iterator<Data> iterator = fget.dataMap().values().iterator();
-        FutureGet fg;
-        while (iterator.hasNext()) {
-            Data d = iterator.next();
-            int key = (Integer)d.object();
-            fg = serverPeer.get(new Number160(key)).start();
-            fg.awaitUninterruptibly();
-            if (fg.data() != null) {
-                MessageResponse mes = (MessageResponse) fg.data().object();
-                Log.d("DHT", mes.getSender().getPeerId() + ">" + mes.getText());
-                if (!mes.getSender().getPeerId().equals(this.id.toString()) && !messages.containsKey(key)) {
-                    messages.put(key, mes);
+        try {
+            FutureGet fget = serverPeer.get(new Number160(keyStore)).all().start();
+            fget.awaitUninterruptibly();
+            Iterator<Data> iterator = fget.dataMap().values().iterator();
+            FutureGet fg;
+            while (iterator.hasNext()) {
+                Data d = iterator.next();
+                int key = (Integer) d.object();
+                fg = serverPeer.get(new Number160(key)).start();
+                fg.awaitUninterruptibly();
+                if (fg.data() != null) {
+                    MessageResponse mes = (MessageResponse) fg.data().object();
+                    Log.d("DHT", mes.getSender().getPeerId() + ">" + mes.getText());
                     serverPeer.remove(new Number160(key)).start();
                     return mes;
                 }
             }
+        } catch (IllegalArgumentException e) {
+            Log.d("DHT", "DHT is offline");
         }
         return null;
     }
 
     public void send(MessageResponse mes) throws IOException {
         int r = new Random().nextInt();
-        peer.add(new Number160(keyStore)).data(new Data(r)).start().awaitUninterruptibly();
-        peer.put(new Number160(r)).data(new Data(mes)).start().awaitUninterruptibly();
+        Log.d("DHT", "Message sent: " + mes.getText());
+        clientPeer.add(new Number160(keyStore)).data(new Data(r)).start().awaitUninterruptibly();
+        clientPeer.put(new Number160(r)).data(new Data(mes)).start().awaitUninterruptibly();
     }
 
     public void shutDown() {
-        this.peer.shutdown();
+        Log.d("DHT", "Shutting down");
+        if (this.serverPeer != null) {
+            this.serverPeer.shutdown();
+        }
+        if (this.clientPeer != null) {
+            this.clientPeer.shutdown();
+        }
     }
 }

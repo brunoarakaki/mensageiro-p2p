@@ -47,5 +47,10 @@ public class Constants {
     public static final String DB_MESSAGES_FIELD_RECEIVER_NAME = "receiver_name";
     public static final String DB_MESSAGES_FIELD_TEXT = "text";
     public static final String DB_MESSAGES_FIELD_SENT_AT = "sent_at";
+    public static final String RECEIVER_DHT_FILTER = "RECEIVER_DHT_FILTER";
+    public static final String RECEIVER_CHAT_FILTER = "RECEIVER_CHAT_FILTER";
+
+    public static final int DHT_OP_CONNECT_TO = 1;
+    public static final int DHT_OP_SEND = 2;
 }
 

@@ -1,9 +1,17 @@
 package br.com.mobile2you.m2ybase.ui.chat;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.support.v4.content.LocalBroadcastManager;
+
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.mobile2you.m2ybase.Constants;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
+import br.com.mobile2you.m2ybase.data.remote.services.DHTService;
 import br.com.mobile2you.m2ybase.ui.base.BasePresenter;
 import rx.Subscription;
 

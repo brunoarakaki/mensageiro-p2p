@@ -1,11 +1,16 @@
 package br.com.mobile2you.m2ybase.ui.main;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -71,8 +76,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
         mMainPresenter.loadContacts(this);
 
-//        Intent dhtService = new Intent(this, DHTService.class);
-//        startService(dhtService);
+        Intent dhtService = new Intent(getApplicationContext(), DHTService.class);
+        startService(dhtService);
     }
 
     public void showNewContactDialog(){

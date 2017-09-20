@@ -1,6 +1,13 @@
 package br.com.mobile2you.m2ybase.ui.chat;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -21,6 +28,7 @@ import br.com.mobile2you.m2ybase.data.local.DHT;
 import br.com.mobile2you.m2ybase.data.local.MessageDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.local.ReceiverThread;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
+import br.com.mobile2you.m2ybase.data.remote.services.DHTService;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -30,9 +38,6 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     private ChatPresenter mPresenter;
     private ChatAdapter mAdapter;
     private int mContactId;
-    private DHT dht;
-    private ReceiverThread receiver;
-    private Timer connectionTimer;
 
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
@@ -49,22 +54,21 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         mPresenter = new ChatPresenter();
         mPresenter.attachView(this);
 
-        try {
-            this.dht = new DHT();
-            this.receiver = new ReceiverThread(dht, mPresenter);
-            new Thread(receiver).start();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        IntentFilter filter = new IntentFilter(Constants.RECEIVER_CHAT_FILTER);
+        LocalBroadcastManager.getInstance(this).registerReceiver(chatReceiver, filter);
 
         Bundle extras = getIntent().getExtras();
         mContactId = extras.getInt(Constants.EXTRA_CONTACT_ID);
         String contactName = extras.getString(Constants.EXTRA_CONTACT_NAME);
         final String contactIp = extras.getString(Constants.EXTRA_CONTACT_IP);
 
-        final Contact me = new Contact(dht.id.toString());
-        me.setPeerId(dht.id.toString());
+        final Contact me = new Contact("me");
         final Contact friend = new Contact(contactName);
+
+        Intent in = new Intent(Constants.RECEIVER_DHT_FILTER);
+        in.putExtra("op", Constants.DHT_OP_CONNECT_TO);
+        in.putExtra("ip", contactIp);
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(in);
 
         Log.d("DHT", "Contact IP: " + contactIp);
         mSendButton.setOnClickListener(new View.OnClickListener() {
@@ -75,30 +79,15 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
                     MessageResponse message = new MessageResponse(me, friend, text);
                     mPresenter.sendMessage(message);
                     mMessageEditText.setText("");
-                    try {
-                        dht.send(message);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    Intent in = new Intent(Constants.RECEIVER_DHT_FILTER);
+                    in.putExtra("op", Constants.DHT_OP_SEND);
+                    in.putExtra("message", message);
+                    LocalBroadcastManager.getInstance(ChatActivity.this).sendBroadcast(in);
                 } else {
                     hideSoftKeyboard();
                 }
             }
         });
-
-        connectionTimer = new Timer();
-        connectionTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                try {
-                    if (dht.connectTo(contactIp)) {
-                        this.cancel();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }, 0, 3000);
 
         setRecyclerView();
         setActionBar(contactName, true);
@@ -159,9 +148,6 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     protected void onDestroy() {
         super.onDestroy();
         mPresenter.detachView();
-        receiver.cancel();
-        dht.shutDown();
-        connectionTimer.cancel();
     }
 
     @Override
@@ -184,4 +170,13 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     public void showProgress(boolean show) {
         showProgressDialog(show);
     }
+
+    private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            MessageResponse message = (MessageResponse)intent.getSerializableExtra("message");
+            mPresenter.sendMessage(message);
+        }
+    };
+
 }
