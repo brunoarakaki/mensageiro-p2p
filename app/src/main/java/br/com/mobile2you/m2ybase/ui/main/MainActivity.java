@@ -64,6 +64,12 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                 chatIntent.putExtra(Constants.EXTRA_CONTACT_IP, contact.getIp());
                 startActivity(chatIntent);
             }
+
+            @Override
+            public boolean onContactLongClicked(Contact contact) {
+                showEditContactDialog(contact);
+                return true;
+            }
         },
             new View.OnClickListener() {
                 @Override
@@ -86,6 +92,31 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         // create alert dialog
         AlertDialog alertDialog = getNewContactDialogBuilder(dialogView).create();
         alertDialog.show();
+    }
+
+
+    public void showEditContactDialog(Contact contact){
+        CharSequence options[] = new CharSequence[] {"Editar", "Apagar Mensagens", "Deletar"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(contact.getName());
+        builder.setItems(options, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which){
+                    case 0:
+                        showToast("Vamoes editar esse contato ai");
+                        break;
+                    case 1:
+                        showToast("Apagando mensagens suspeitas");
+                        break;
+                    case 2:
+                        showToast("Belém, Belém, nunca mais eu tô de bem!");
+                        break;
+                }
+            }
+        });
+        builder.show();
     }
 
     public AlertDialog.Builder getNewContactDialogBuilder(View dialogView){

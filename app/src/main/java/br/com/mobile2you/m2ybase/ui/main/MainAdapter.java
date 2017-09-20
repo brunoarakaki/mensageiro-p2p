@@ -59,7 +59,7 @@ public class MainAdapter extends BaseRecyclerViewAdapter {
 
     public interface OnClicked {
         void onContactClicked(Contact contact);
-
+        boolean onContactLongClicked(Contact contact);
     }
 
     class ConctactViewHolder extends RecyclerView.ViewHolder{
@@ -80,6 +80,12 @@ public class MainAdapter extends BaseRecyclerViewAdapter {
                 @Override
                 public void onClick(View v) {
                     mClickListener.onContactClicked(contact);
+                }
+            });
+            itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    return mClickListener.onContactLongClicked(contact);
                 }
             });
         }

@@ -14,8 +14,9 @@
 <EditText
     android:id="@+id/edit_text_contact_name"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content" >
-
+    android:layout_height="wrap_content"
+    android:inputType="textCapSentences"
+    >
     <requestFocus />
 </EditText>
 
