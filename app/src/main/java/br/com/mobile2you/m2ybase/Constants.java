@@ -24,6 +24,9 @@ public class Constants {
     public static final String EXTRA_URL = PACKAGE_NAME + "EXTRA_URL";
     public static final String EXTRA_CONTACT_ID = PACKAGE_NAME + "EXTRA_CONTACT_ID";
     public static final String EXTRA_CONTACT_NAME = PACKAGE_NAME + "EXTRA_CONTACT_NAME";
+    public static final String EXTRA_CONTACT_IP = PACKAGE_NAME + "EXTRA_CONTACT_IP";
+    public static final String EXTRA_DHT = PACKAGE_NAME + "EXTRA_DHT";
+    public static final String EXTRA_PEER_ID = PACKAGE_NAME + "EXTRA_PEER_ID";
 
 
 //    public static final String PARSE_APP_ID = "Tu3tFfazCKY9KrQkw3CwkXzkpE8RjEHhqCjvAYkB";
@@ -35,11 +38,19 @@ public class Constants {
     public static final String DB_CONTACTS_TABLE = "contacts";
     public static final String DB_CONTACT_FIELD_ID = "_id";
     public static final String DB_CONTACT_FIELD_NAME = "name";
+    public static final String DB_CONTACT_FIELD_IP = "ip";
     public static final String DB_MESSAGES_TABLE = "messages";
     public static final String DB_MESSAGES_FIELD_MESSAGE_ID = "_id";
     public static final String DB_MESSAGES_FIELD_SENDER_ID = "sender_id";
     public static final String DB_MESSAGES_FIELD_RECEIVER_ID = "receiver_id";
+    public static final String DB_MESSAGES_FIELD_SENDER_NAME = "sender_name";
+    public static final String DB_MESSAGES_FIELD_RECEIVER_NAME = "receiver_name";
     public static final String DB_MESSAGES_FIELD_TEXT = "text";
     public static final String DB_MESSAGES_FIELD_SENT_AT = "sent_at";
+    public static final String RECEIVER_DHT_FILTER = "RECEIVER_DHT_FILTER";
+    public static final String RECEIVER_CHAT_FILTER = "RECEIVER_CHAT_FILTER";
+
+    public static final int DHT_OP_CONNECT_TO = 1;
+    public static final int DHT_OP_SEND = 2;
 }
 

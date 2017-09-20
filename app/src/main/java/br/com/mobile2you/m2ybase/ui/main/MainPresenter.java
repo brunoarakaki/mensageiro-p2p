@@ -102,9 +102,10 @@ public class MainPresenter extends BasePresenter<MainMvpView> {
         mMainMvpView.showContacts(mCachedContacts);
     }
 
-    public void addContact(Context context, String name){
+    public void addContact(Context context, String name, String ip){
         ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
         Contact contact = new Contact(name);
+        contact.setIp(ip);
         long contactId = dbHelper.add(contact);
         contact.setId((int)contactId);
         mCachedContacts.add(contact);

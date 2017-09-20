@@ -1,25 +1,35 @@
 package br.com.mobile2you.m2ybase.ui.main;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.List;
 
 import br.com.mobile2you.m2ybase.Constants;
 import br.com.mobile2you.m2ybase.R;
 import br.com.mobile2you.m2ybase.data.local.Contact;
+import br.com.mobile2you.m2ybase.data.local.DHT;
+import br.com.mobile2you.m2ybase.data.local.ReceiverThread;
+import br.com.mobile2you.m2ybase.data.local.Utils;
 import br.com.mobile2you.m2ybase.data.remote.models.PollsResponse;
 import br.com.mobile2you.m2ybase.data.remote.models.PostsResponse;
+import br.com.mobile2you.m2ybase.data.remote.services.DHTService;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
 import br.com.mobile2you.m2ybase.ui.chat.ChatActivity;
 import butterknife.BindView;
@@ -42,6 +52,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mMainPresenter = new MainPresenter();
         mMainPresenter.attachView(this);
 
+        Toast.makeText(getApplicationContext(), Utils.getIPAddress(true), Toast.LENGTH_LONG).show();
+
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mAdapter = new MainAdapter(new MainAdapter.OnClicked() {
             @Override
@@ -49,6 +61,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                 Intent chatIntent = new Intent(getApplicationContext(), ChatActivity.class);
                 chatIntent.putExtra(Constants.EXTRA_CONTACT_ID, contact.getId());
                 chatIntent.putExtra(Constants.EXTRA_CONTACT_NAME, contact.getName());
+                chatIntent.putExtra(Constants.EXTRA_CONTACT_IP, contact.getIp());
                 startActivity(chatIntent);
             }
         },
@@ -62,6 +75,9 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         setActionBar("Mensageiro P2P");
 
         mMainPresenter.loadContacts(this);
+
+        Intent dhtService = new Intent(getApplicationContext(), DHTService.class);
+        startService(dhtService);
     }
 
     public void showNewContactDialog(){
@@ -80,6 +96,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
         final EditText userInput = (EditText) dialogView
                 .findViewById(R.id.edit_text_contact_name);
+        final EditText ipInput = (EditText) dialogView
+                .findViewById(R.id.edit_text_contact_ip);
 
         // set dialog message
         alertDialogBuilder
@@ -87,7 +105,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
             .setPositiveButton("Adicionar", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog,int id) {
                     String contactName = userInput.getText().toString();
-                    addContact(contactName);
+                    String contactIp = ipInput.getText().toString();
+                    addContact(contactName, contactIp);
                 }
             })
             .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -99,8 +118,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
     }
 
-    public void addContact(String name){
-        mMainPresenter.addContact(this, name);
+    public void addContact(String name, String ip){
+        mMainPresenter.addContact(this, name, ip);
     }
 
     @Override

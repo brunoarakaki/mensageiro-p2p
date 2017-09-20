@@ -31,6 +31,8 @@ public class MessageDatabaseHelper {
         }
         Cursor cursor =  db.rawQuery("select " + Constants.DB_MESSAGES_FIELD_SENDER_ID + ", " +
                 Constants.DB_MESSAGES_FIELD_RECEIVER_ID + ", " +
+                Constants.DB_MESSAGES_FIELD_SENDER_NAME + ", " +
+                Constants.DB_MESSAGES_FIELD_RECEIVER_NAME + ", " +
                 Constants.DB_MESSAGES_FIELD_TEXT + ", " +
                 Constants.DB_MESSAGES_FIELD_SENT_AT + " from " +
                 Constants.DB_MESSAGES_TABLE + " where (" +
@@ -67,8 +69,10 @@ public class MessageDatabaseHelper {
 
     private ContentValues convertMessageToContentValues(MessageResponse message){
         ContentValues contentValues = new ContentValues();
-        contentValues.put(Constants.DB_MESSAGES_FIELD_SENDER_ID, message.getSenderId());
-        contentValues.put(Constants.DB_MESSAGES_FIELD_RECEIVER_ID, message.getReceiverId());
+        contentValues.put(Constants.DB_MESSAGES_FIELD_SENDER_ID, message.getSender().getId());
+        contentValues.put(Constants.DB_MESSAGES_FIELD_RECEIVER_ID, message.getReceiver().getId());
+        contentValues.put(Constants.DB_MESSAGES_FIELD_SENDER_NAME, message.getSender().getName());
+        contentValues.put(Constants.DB_MESSAGES_FIELD_RECEIVER_NAME, message.getReceiver().getName());
         contentValues.put(Constants.DB_MESSAGES_FIELD_TEXT, message.getText());
         contentValues.put(Constants.DB_MESSAGES_FIELD_SENT_AT, message.getSentAt().getTime());
         return contentValues;
@@ -79,9 +83,13 @@ public class MessageDatabaseHelper {
         while (cursor.moveToNext()) {
             int senderId = cursor.getInt(0);
             int receiverId = cursor.getInt(1);
-            String text = cursor.getString(2);
-            Timestamp sentAt = new Timestamp(cursor.getLong(3));
-            messages.add(new MessageResponse(senderId, text, receiverId,sentAt));
+            String senderName = cursor.getString(2);
+            String receiverName = cursor.getString(3);
+            String text = cursor.getString(4);
+            Timestamp sentAt = new Timestamp(cursor.getLong(5));
+            Contact sender = new Contact(senderId, senderName);
+            Contact receiver = new Contact(receiverId, receiverName);
+            messages.add(new MessageResponse(sender, receiver, text, sentAt));
         }
         return messages;
     }

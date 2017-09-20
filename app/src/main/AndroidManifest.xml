@@ -36,6 +36,9 @@
             android:value="d9aa34977d8b9166187cc83674aea00089585509" />
 
         <activity android:name=".ui.chat.ChatActivity"></activity>
+        <service
+            android:name=".data.remote.services.DHTService" >
+        </service>
     </application>
 
 </manifest>

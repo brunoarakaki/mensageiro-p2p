@@ -1,12 +1,17 @@
 package br.com.mobile2you.m2ybase.data.local;
 
+import java.io.Serializable;
+
 /**
  * Created by Bruno on 14-Aug-17.
  */
 
-public class Contact {
+public class Contact implements Serializable {
+
     private int id;
     private String name;
+    private String ip;
+    private String peerId;
 
     public Contact(String name) {
         super();
@@ -34,4 +39,17 @@ public class Contact {
     public String getName() {
         return name;
     }
+
+    public String getIp() { return ip; }
+
+    public void setIp(String ip) { this.ip = ip; }
+
+    public String getPeerId() {
+        return peerId;
+    }
+
+    public void setPeerId(String peerId) {
+        this.peerId = peerId;
+    }
+
 }
