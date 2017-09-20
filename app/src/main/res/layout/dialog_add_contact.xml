@@ -27,7 +27,8 @@
 <EditText
     android:id="@+id/edit_text_contact_ip"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content" >
-</EditText>
+    android:layout_height="wrap_content"
+    android:inputType="phone"
+    />
 
 </LinearLayout>
