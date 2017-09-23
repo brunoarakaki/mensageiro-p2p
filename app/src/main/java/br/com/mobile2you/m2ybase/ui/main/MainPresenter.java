@@ -112,6 +112,12 @@ public class MainPresenter extends BasePresenter<MainMvpView> {
         mMainMvpView.showContacts(mCachedContacts);
 
     }
+    public void deleteContact(Context context, Contact contact){
+        ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
+        dbHelper.delete(contact.getId());
+        mCachedContacts.remove(contact);
+        mMainMvpView.showContacts(mCachedContacts);
+    }
 
     private Observable<List<PollsResponse>> getPollsOberservable() {
 //        if (mCachedPolls != null) {

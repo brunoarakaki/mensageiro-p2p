@@ -95,7 +95,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     }
 
 
-    public void showEditContactDialog(Contact contact){
+    public void showEditContactDialog(final Contact contact){
         CharSequence options[] = new CharSequence[] {"Editar", "Apagar Mensagens", "Deletar"};
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -111,7 +111,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                         showToast("Apagando mensagens suspeitas");
                         break;
                     case 2:
-                        showToast("Belém, Belém, nunca mais eu tô de bem!");
+                        deleteContact(contact);
+                        showToast("Contato removido");
                         break;
                 }
             }
@@ -151,6 +152,10 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
     public void addContact(String name, String ip){
         mMainPresenter.addContact(this, name, ip);
+    }
+
+    public void deleteContact(Contact contact){
+        mMainPresenter.deleteContact(this, contact);
     }
 
     @Override
