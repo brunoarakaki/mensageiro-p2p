@@ -4,6 +4,12 @@ package br.com.mobile2you.m2ybase.data.local;
  * Created by mayerlevy on 9/17/17.
  */
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
+import com.google.gson.Gson;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;

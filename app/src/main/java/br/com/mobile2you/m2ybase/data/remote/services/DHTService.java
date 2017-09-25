@@ -5,19 +5,26 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+
+import com.google.gson.Gson;
+
+import net.tomp2p.peers.Number160;
 
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import br.com.mobile2you.m2ybase.Constants;
+import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.local.DHT;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
-import br.com.mobile2you.m2ybase.ui.chat.ChatActivity;
 
 /**
  * Created by mayerlevy on 9/19/17.
@@ -25,17 +32,32 @@ import br.com.mobile2you.m2ybase.ui.chat.ChatActivity;
 
 public class DHTService extends IntentService {
 
+    private Contact myself;
     private DHT dht;
     private Timer receiverTimer;
+
+    public String[] trackersList = {"192.168.1.104"};
 
     public DHTService() {
         super("DHTService");
     }
 
     @Override
-    public void onCreate() {
+    public void onDestroy() {
+        receiverTimer.cancel();
+        LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(dhtReceiver);
+        this.dht.shutDown();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
         try {
             dht = new DHT();
+            dht.myself = (Contact) intent.getSerializableExtra("myself");
+            for (String trackerAddress : trackersList) {
+                Thread opThread = new Thread(new connectTo(trackerAddress));
+                opThread.start();
+            }
             IntentFilter filter = new IntentFilter(Constants.RECEIVER_DHT_FILTER);
             LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(dhtReceiver, filter);
             receiverTimer = new Timer();
@@ -48,17 +70,7 @@ public class DHTService extends IntentService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public void onDestroy() {
-        receiverTimer.cancel();
-        this.dht.shutDown();
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
     @Nullable
@@ -72,39 +84,38 @@ public class DHTService extends IntentService {
 
     }
 
-    private Boolean connectTo(String ip) {
-        try {
-            return this.dht.connectTo(ip);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
     private BroadcastReceiver dhtReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             int op = intent.getIntExtra("op", 0);
             Thread opThread;
             switch(op) {
-                case Constants.DHT_OP_CONNECT_TO:
+                case Constants.DHT_OP_CONNECT_TO: {
                     final String ip = intent.getStringExtra("ip");
                     opThread = new Thread(new connectTo(ip));
                     opThread.start();
                     break;
+                }
 
-                case Constants.DHT_OP_SEND:
-                    final MessageResponse mes = (MessageResponse)intent.getSerializableExtra("message");
+                case Constants.DHT_OP_SEND: {
+                    final MessageResponse mes = (MessageResponse) intent.getSerializableExtra("message");
                     opThread = new Thread(new send(mes));
                     opThread.start();
                     break;
+                }
+
+                case Constants.DHT_OP_CLOSE_CONNECTION: {
+                    final String ip = intent.getStringExtra("ip");
+                    opThread = new Thread(new closeConnection(ip));
+                    opThread.start();
+                    break;
+                }
             }
         }
     };
 
     private void checkMessages() {
         try {
-            Log.d("DHT", "Checking messages...");
             final MessageResponse message = dht.get();
             if (message != null) {
                 Log.d("DHT", message.getSender().getName() + ": " + message.getText());
@@ -135,6 +146,19 @@ public class DHTService extends IntentService {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    };
+
+    private class closeConnection implements Runnable {
+
+        private String ip;
+        public closeConnection(String ip) {
+            this.ip = ip;
+        }
+
+        @Override
+        public void run() {
+            dht.closeConnection(ip);
         }
     };
 

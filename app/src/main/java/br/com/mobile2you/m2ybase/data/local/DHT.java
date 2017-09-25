@@ -20,20 +20,26 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
 import net.tomp2p.connection.Bindings;
+import net.tomp2p.connection.SendBehavior;
 import net.tomp2p.dht.FutureGet;
 import net.tomp2p.dht.FutureRemove;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
+import net.tomp2p.futures.BaseFuture;
 import net.tomp2p.futures.FutureBootstrap;
 import net.tomp2p.futures.FutureDiscover;
+import net.tomp2p.message.Message;
+import net.tomp2p.p2p.BroadcastHandler;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.p2p.PeerBuilder;
+import net.tomp2p.p2p.Shutdown;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.storage.Data;
@@ -44,16 +50,18 @@ public class DHT {
 
     public Number160 serverId;
     public Number160 clientId;
+    public Contact myself;
     public PeerDHT serverPeer;
-    public PeerDHT clientPeer;
+    public HashMap<String, PeerDHT> clientsPeerList = new HashMap<>();
+    public PeerDHT trackerPeer;
     public Boolean started = false;
-    public Boolean isConnected = false;
-    public InetAddress connectedIP;
     public InetAddress ip;
 
     final int keyStore = 12345;
     final int serverPort = 4001;
     final int clientPort = 4002;
+
+    final String trackerAddress = "192.168.1.104";
 
     public DHT() throws Exception {
         this((new Random()).nextInt());
@@ -81,9 +89,10 @@ public class DHT {
             return false;
         }
         this.clientId = new Number160((new Random()).nextInt());
-        this.clientPeer = new PeerBuilderDHT(new PeerBuilder(this.clientId).ports(clientPort).behindFirewall().start()).start();
+        PeerDHT clientPeer = new PeerBuilderDHT(new PeerBuilder(this.clientId).ports(clientPort).behindFirewall().start()).start();
+
         PeerAddress bootStrapServer = new PeerAddress(Number160.ZERO, InetAddress.getByName(address), serverPort, serverPort, serverPort + 1);
-        FutureDiscover fd = this.clientPeer.peer().discover().peerAddress(bootStrapServer).start();
+        FutureDiscover fd = clientPeer.peer().discover().peerAddress(bootStrapServer).start();
         Log.d("DHT", "Trying to connect...");
         fd.awaitUninterruptibly();
         if (fd.isSuccess()) {
@@ -92,17 +101,23 @@ public class DHT {
             Log.d("DHT", "Couldn't get outside address: " + fd.failedReason());
         }
         bootStrapServer = fd.reporter();
-        FutureBootstrap bootstrap = this.clientPeer.peer().bootstrap().peerAddress(bootStrapServer).start();
+        FutureBootstrap bootstrap = clientPeer.peer().bootstrap().peerAddress(bootStrapServer).start();
         bootstrap.awaitUninterruptibly();
         if (bootstrap.isSuccess()) {
-            this.isConnected = true;
-            this.connectedIP = InetAddress.getByName(address);
-            Log.d("DHT", "Connected!" + this.clientPeer.peerBean().peerMap().all());
+            clientsPeerList.put(address, clientPeer);
+            clientPeer.send(Number160.createHash("hello")).object(myself.getName());
+            Log.d("DHT", "Connected!");
             return true;
         } else {
             Log.d("DHT", "Could not connect!");
             return false;
         }
+
+    }
+
+    public void closeConnection(String ip) {
+        clientsPeerList.get(ip).peer().announceShutdown().start().awaitUninterruptibly();
+        clientsPeerList.remove(ip);
     }
 
     public MessageResponse get() throws ClassNotFoundException, IOException {
@@ -122,7 +137,6 @@ public class DHT {
                 fg.awaitUninterruptibly();
                 if (fg.data() != null) {
                     MessageResponse mes = (MessageResponse) fg.data().object();
-                    Log.d("DHT", mes.getSender().getPeerId() + ">" + mes.getText());
                     serverPeer.remove(new Number160(key)).start();
                     return mes;
                 }
@@ -136,17 +150,26 @@ public class DHT {
     public void send(MessageResponse mes) throws IOException {
         int r = new Random().nextInt();
         Log.d("DHT", "Message sent: " + mes.getText());
-        clientPeer.add(new Number160(keyStore)).data(new Data(r)).start().awaitUninterruptibly();
-        clientPeer.put(new Number160(r)).data(new Data(mes)).start().awaitUninterruptibly();
+        String clientIp = mes.getReceiver().getIp();
+        if (clientsPeerList.get(clientIp) != null) {
+            clientsPeerList.get(clientIp).add(new Number160(keyStore)).data(new Data(r)).start().awaitUninterruptibly();
+            clientsPeerList.get(clientIp).put(new Number160(r)).data(new Data(mes)).start().awaitUninterruptibly();
+        }
     }
 
     public void shutDown() {
         Log.d("DHT", "Shutting down");
         if (this.serverPeer != null) {
+            this.serverPeer.peer().announceShutdown().start().awaitUninterruptibly();
             this.serverPeer.shutdown();
         }
-        if (this.clientPeer != null) {
-            this.clientPeer.shutdown();
+        if (!this.clientsPeerList.isEmpty()) {
+            Iterator it = this.clientsPeerList.keySet().iterator();
+            while (it.hasNext()) {
+                PeerDHT peer = (PeerDHT) it.next();
+                peer.peer().announceShutdown().start().awaitUninterruptibly();
+                peer.shutdown();
+            }
         }
     }
 }

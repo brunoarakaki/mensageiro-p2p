@@ -37,7 +37,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
 
     private ChatPresenter mPresenter;
     private ChatAdapter mAdapter;
-    private int mContactId;
+    private String contactIp;
 
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
@@ -58,19 +58,18 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         LocalBroadcastManager.getInstance(this).registerReceiver(chatReceiver, filter);
 
         Bundle extras = getIntent().getExtras();
-        mContactId = extras.getInt(Constants.EXTRA_CONTACT_ID);
-        String contactName = extras.getString(Constants.EXTRA_CONTACT_NAME);
-        final String contactIp = extras.getString(Constants.EXTRA_CONTACT_IP);
 
-        final Contact me = new Contact("me");
-        final Contact friend = new Contact(contactName);
+        final Contact me = (Contact) extras.getSerializable(Constants.EXTRA_MYSELF);
+        final Contact friend = (Contact) extras.getSerializable(Constants.EXTRA_CONTACT);
+        this.contactIp = friend.getIp();
+        friend.setIp(this.contactIp);
 
         Intent in = new Intent(Constants.RECEIVER_DHT_FILTER);
         in.putExtra("op", Constants.DHT_OP_CONNECT_TO);
-        in.putExtra("ip", contactIp);
+        in.putExtra("ip", this.contactIp);
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(in);
 
-        Log.d("DHT", "Contact IP: " + contactIp);
+        Log.d("DHT", "Contact IP: " + this.contactIp);
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -90,8 +89,8 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         });
 
         setRecyclerView();
-        setActionBar(contactName, true);
-        mPresenter.loadMessages(0, mContactId);
+        setActionBar(friend.getName(), true);
+        mPresenter.loadMessages(0, friend.getId());
     }
 
     @Override
@@ -148,6 +147,10 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     protected void onDestroy() {
         super.onDestroy();
         mPresenter.detachView();
+        Intent in = new Intent(Constants.RECEIVER_DHT_FILTER);
+        in.putExtra("op", Constants.DHT_OP_CLOSE_CONNECTION);
+        in.putExtra("ip", contactIp);
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(in);
     }
 
     @Override

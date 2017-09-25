@@ -22,11 +22,8 @@ public class Constants {
 
     public static final String EXTRA_ACTIVITY_TITLE = PACKAGE_NAME + "EXTRA_ACTIVITY_TITLE";
     public static final String EXTRA_URL = PACKAGE_NAME + "EXTRA_URL";
-    public static final String EXTRA_CONTACT_ID = PACKAGE_NAME + "EXTRA_CONTACT_ID";
-    public static final String EXTRA_CONTACT_NAME = PACKAGE_NAME + "EXTRA_CONTACT_NAME";
-    public static final String EXTRA_CONTACT_IP = PACKAGE_NAME + "EXTRA_CONTACT_IP";
-    public static final String EXTRA_DHT = PACKAGE_NAME + "EXTRA_DHT";
-    public static final String EXTRA_PEER_ID = PACKAGE_NAME + "EXTRA_PEER_ID";
+    public static final String EXTRA_MYSELF = PACKAGE_NAME + "EXTRA_MYSELF";
+    public static final String EXTRA_CONTACT = PACKAGE_NAME + "EXTRA_CONTACT";
 
 
 //    public static final String PARSE_APP_ID = "Tu3tFfazCKY9KrQkw3CwkXzkpE8RjEHhqCjvAYkB";
@@ -52,5 +49,6 @@ public class Constants {
 
     public static final int DHT_OP_CONNECT_TO = 1;
     public static final int DHT_OP_SEND = 2;
+    public static final int DHT_OP_CLOSE_CONNECTION = 3;
 }
 

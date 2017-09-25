@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
@@ -54,14 +55,15 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
         Toast.makeText(getApplicationContext(), Utils.getIPAddress(true), Toast.LENGTH_LONG).show();
 
+        final Contact myself = new Contact(android.os.Build.MODEL);
+
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mAdapter = new MainAdapter(new MainAdapter.OnClicked() {
             @Override
             public void onContactClicked(Contact contact) {
                 Intent chatIntent = new Intent(getApplicationContext(), ChatActivity.class);
-                chatIntent.putExtra(Constants.EXTRA_CONTACT_ID, contact.getId());
-                chatIntent.putExtra(Constants.EXTRA_CONTACT_NAME, contact.getName());
-                chatIntent.putExtra(Constants.EXTRA_CONTACT_IP, contact.getIp());
+                chatIntent.putExtra(Constants.EXTRA_CONTACT, contact);
+                chatIntent.putExtra(Constants.EXTRA_MYSELF, myself);
                 startActivity(chatIntent);
             }
         },
@@ -77,6 +79,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mMainPresenter.loadContacts(this);
 
         Intent dhtService = new Intent(getApplicationContext(), DHTService.class);
+        dhtService.putExtra("myself", myself);
         startService(dhtService);
     }
 
