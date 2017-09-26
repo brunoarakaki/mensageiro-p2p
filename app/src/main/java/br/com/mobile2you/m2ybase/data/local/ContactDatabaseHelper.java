@@ -48,6 +48,17 @@ public class ContactDatabaseHelper {
         return id;
     }
 
+    public void update(Contact contact) {
+        SQLiteDatabase db = _openHelper.getWritableDatabase();
+        if (db == null) {
+            return;
+        }
+        ContentValues row = convertContactToContentValues(contact);
+        db.update(Constants.DB_CONTACTS_TABLE, row, "_id = ?", new String[] { contact.getId() });
+        db.close();
+    }
+
+
     public void delete(String id) {
         SQLiteDatabase db = _openHelper.getWritableDatabase();
         if (db == null) {

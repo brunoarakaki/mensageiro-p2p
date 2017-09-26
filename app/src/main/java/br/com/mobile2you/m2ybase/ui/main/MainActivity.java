@@ -80,7 +80,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
             @Override
             public boolean onContactLongClicked(Contact contact) {
-                showEditContactDialog(contact);
+                showContactSettingsDialog(contact);
                 return true;
             }
         },
@@ -107,8 +107,16 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         alertDialog.show();
     }
 
+    public void showEditContactDialog(Contact contact){
+        LayoutInflater li = LayoutInflater.from(this);
+        View dialogView = li.inflate(R.layout.dialog_add_contact, null);
+        // create alert dialog
+        AlertDialog alertDialog = getEditContactDialogBuilder(dialogView, contact).create();
+        alertDialog.show();
+    }
 
-    public void showEditContactDialog(final Contact contact){
+
+    public void showContactSettingsDialog(final Contact contact){
         CharSequence options[] = new CharSequence[] {"Editar", "Apagar Mensagens", "Deletar"};
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -118,6 +126,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
             public void onClick(DialogInterface dialog, int which) {
                 switch (which){
                     case 0:
+                        showEditContactDialog(contact);
                         showToast("Vamoes editar esse contato ai");
                         break;
                     case 1:
@@ -164,8 +173,47 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
     }
 
+    public AlertDialog.Builder getEditContactDialogBuilder(View dialogView, final Contact contact){
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                this);
+
+        alertDialogBuilder.setView(dialogView);
+
+        final EditText userInput = (EditText) dialogView
+                .findViewById(R.id.edit_text_contact_name);
+        final EditText ipInput = (EditText) dialogView
+                .findViewById(R.id.edit_text_contact_ip);
+
+        userInput.setText(contact.getName());
+        ipInput.setText(contact.getIp());
+
+        // set dialog message
+        alertDialogBuilder
+            .setCancelable(false)
+            .setPositiveButton("Editar", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,int id) {
+                    String contactName = userInput.getText().toString();
+                    String contactIp = ipInput.getText().toString();
+                    contact.setName(contactName);
+                    contact.setIp(contactIp);
+                    editContact(contact);
+                }
+            })
+            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,int id) {
+                    dialog.cancel();
+                }
+            });
+        return alertDialogBuilder;
+
+    }
+
     public void addContact(String name, String ip){
         mMainPresenter.addContact(this, name, ip);
+    }
+
+    public void editContact(Contact contact){
+        mMainPresenter.updateContact(this, contact);
     }
 
     public void deleteContact(Contact contact){

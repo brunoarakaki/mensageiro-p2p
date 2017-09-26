@@ -127,6 +127,12 @@ public class MainPresenter extends BasePresenter<MainMvpView> {
         mMainMvpView.showContacts(mCachedContacts);
     }
 
+    public void updateContact(Context context, Contact contact){
+        ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
+        dbHelper.update(contact);
+        loadContacts(context);
+    }
+
     public void deleteConversation(Context context, Contact contact){
         MessageDatabaseHelper dbHelper = new MessageDatabaseHelper(context);
         String user_id = PreferencesHelper.getInstance().getUserId();
