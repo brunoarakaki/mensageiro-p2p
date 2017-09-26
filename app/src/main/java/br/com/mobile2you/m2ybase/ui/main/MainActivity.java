@@ -1,15 +1,19 @@
 package br.com.mobile2you.m2ybase.ui.main;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -25,6 +29,7 @@ import br.com.mobile2you.m2ybase.Constants;
 import br.com.mobile2you.m2ybase.R;
 import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.local.DHT;
+import br.com.mobile2you.m2ybase.data.local.PreferencesHelper;
 import br.com.mobile2you.m2ybase.data.local.ReceiverThread;
 import br.com.mobile2you.m2ybase.data.local.Utils;
 import br.com.mobile2you.m2ybase.data.remote.models.PollsResponse;
@@ -32,6 +37,7 @@ import br.com.mobile2you.m2ybase.data.remote.models.PostsResponse;
 import br.com.mobile2you.m2ybase.data.remote.services.DHTService;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
 import br.com.mobile2you.m2ybase.ui.chat.ChatActivity;
+import br.com.mobile2you.m2ybase.utils.PermissionUtil;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -52,7 +58,14 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mMainPresenter = new MainPresenter();
         mMainPresenter.attachView(this);
 
-        Toast.makeText(getApplicationContext(), Utils.getIPAddress(true), Toast.LENGTH_LONG).show();
+//        Toast.makeText(getApplicationContext(), Utils.getIPAddress(true), Toast.LENGTH_LONG).show();
+
+        if(PermissionUtil.checkPermission(this,
+                Manifest.permission.READ_PHONE_STATE, Constants.PERMISSION_REQUEST_PHONE_STATE)){
+            storeUserId();
+        }
+
+
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mAdapter = new MainAdapter(new MainAdapter.OnClicked() {
@@ -108,6 +121,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                         showToast("Vamoes editar esse contato ai");
                         break;
                     case 1:
+                        deleteConversation(contact);
                         showToast("Apagando mensagens suspeitas");
                         break;
                     case 2:
@@ -158,6 +172,19 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mMainPresenter.deleteContact(this, contact);
     }
 
+    public void deleteConversation(Contact contact){
+        mMainPresenter.deleteConversation(this, contact);
+    }
+
+    private void storeUserId(){
+        PreferencesHelper.getInstance().putUserId(getPhoneId());
+    }
+
+    private String getPhoneId(){
+        TelephonyManager telemamanger  =(TelephonyManager)this.getSystemService(Context.TELEPHONY_SERVICE);
+        return telemamanger.getSimSerialNumber();
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -198,5 +225,28 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     @Override
     public void showContacts(List<Contact> contacts) {
         mAdapter.setContacts(contacts);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case Constants.PERMISSION_REQUEST_PHONE_STATE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+                    storeUserId();
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+
+                }
+                return;
+            }
+        }
     }
 }

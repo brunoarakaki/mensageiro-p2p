@@ -3,9 +3,12 @@ package br.com.mobile2you.m2ybase.ui.main;
 import android.content.Context;
 
 import java.util.List;
+import java.util.Random;
 
 import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.local.ContactDatabaseHelper;
+import br.com.mobile2you.m2ybase.data.local.MessageDatabaseHelper;
+import br.com.mobile2you.m2ybase.data.local.PreferencesHelper;
 import br.com.mobile2you.m2ybase.data.remote.ApiaryDataManager;
 import br.com.mobile2you.m2ybase.data.remote.JsonPlaceholderDataManager;
 import br.com.mobile2you.m2ybase.data.remote.models.PollsResponse;
@@ -106,17 +109,28 @@ public class MainPresenter extends BasePresenter<MainMvpView> {
         ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
         Contact contact = new Contact(name);
         contact.setIp(ip);
-        long contactId = dbHelper.add(contact);
-        contact.setId((int)contactId);
+
+        Random generator = new Random();
+        String randomId = String.valueOf (generator.nextInt(96) + 32);
+        contact.setId(randomId);
+
+        dbHelper.add(contact);
         mCachedContacts.add(contact);
         mMainMvpView.showContacts(mCachedContacts);
 
     }
+
     public void deleteContact(Context context, Contact contact){
         ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
         dbHelper.delete(contact.getId());
         mCachedContacts.remove(contact);
         mMainMvpView.showContacts(mCachedContacts);
+    }
+
+    public void deleteConversation(Context context, Contact contact){
+        MessageDatabaseHelper dbHelper = new MessageDatabaseHelper(context);
+        String user_id = PreferencesHelper.getInstance().getUserId();
+        dbHelper.deleteConversation(user_id, contact.getId());
     }
 
     private Observable<List<PollsResponse>> getPollsOberservable() {

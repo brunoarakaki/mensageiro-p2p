@@ -48,17 +48,18 @@ public class ContactDatabaseHelper {
         return id;
     }
 
-    public void delete(long id) {
+    public void delete(String id) {
         SQLiteDatabase db = _openHelper.getWritableDatabase();
         if (db == null) {
             return;
         }
-        db.delete(Constants.DB_CONTACTS_TABLE, "_id = ?", new String[] { String.valueOf(id) });
+        db.delete(Constants.DB_CONTACTS_TABLE, "_id = ?", new String[] { id });
         db.close();
     }
 
     private ContentValues convertContactToContentValues(Contact contact){
         ContentValues contentValues = new ContentValues();
+        contentValues.put(Constants.DB_CONTACT_FIELD_ID, contact.getId());
         contentValues.put(Constants.DB_CONTACT_FIELD_NAME, contact.getName());
         contentValues.put(Constants.DB_CONTACT_FIELD_IP, contact.getIp());
         return contentValues;
@@ -67,7 +68,7 @@ public class ContactDatabaseHelper {
     private List<Contact> convertCursorToContacts(Cursor cursor){
         List<Contact> contacts = new ArrayList<>();
         while (cursor.moveToNext()) {
-            int id = cursor.getInt(0);
+            String id = cursor.getString(0);
             String name = cursor.getString(1);
             String ip = cursor.getString(2);
             Contact contact = new Contact(id, name);

@@ -16,7 +16,7 @@ public interface ChatMvpView extends MvpView {
 
     void showMessages(List<MessageResponse> messages);
 
-    void loadContactMessages(int user_id, int sender_id);
+    void loadContactMessages(String user_id, String sender_id);
 
     void showEmptyMessages();
 

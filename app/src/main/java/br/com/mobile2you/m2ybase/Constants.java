@@ -15,6 +15,9 @@ public class Constants {
     public static final String LANGUAGE_PT = "pt";
     public static final String COUNTRY_BR = "BR";
 
+    // PERMISSION REQUEST CALLBACK ID
+    public static final int PERMISSION_REQUEST_PHONE_STATE = 1;
+
     //API URLs
     public static final String BASE_URL = "http://polls.apiblueprint.org/";
     public static final String LOGIN_URL = BASE_URL + "polls/";

@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 public class Contact implements Serializable {
 
-    private int id;
+    private String id;
     private String name;
     private String ip;
     private String peerId;
@@ -18,13 +18,13 @@ public class Contact implements Serializable {
         this.name = name;
     }
 
-    public Contact(int id, String name) {
+    public Contact(String id, String name) {
         super();
         this.id = id;
         this.name = name;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -32,7 +32,7 @@ public class Contact implements Serializable {
         this.name = name;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 

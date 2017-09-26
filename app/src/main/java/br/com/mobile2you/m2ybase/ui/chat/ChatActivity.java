@@ -26,6 +26,7 @@ import br.com.mobile2you.m2ybase.R;
 import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.local.DHT;
 import br.com.mobile2you.m2ybase.data.local.MessageDatabaseHelper;
+import br.com.mobile2you.m2ybase.data.local.PreferencesHelper;
 import br.com.mobile2you.m2ybase.data.local.ReceiverThread;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
 import br.com.mobile2you.m2ybase.data.remote.services.DHTService;
@@ -37,7 +38,8 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
 
     private ChatPresenter mPresenter;
     private ChatAdapter mAdapter;
-    private int mContactId;
+    private String mContactId;
+    private String mUserId;
 
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
@@ -58,12 +60,13 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         LocalBroadcastManager.getInstance(this).registerReceiver(chatReceiver, filter);
 
         Bundle extras = getIntent().getExtras();
-        mContactId = extras.getInt(Constants.EXTRA_CONTACT_ID);
+        mContactId = extras.getString(Constants.EXTRA_CONTACT_ID);
+        mUserId = PreferencesHelper.getInstance().getUserId();
         String contactName = extras.getString(Constants.EXTRA_CONTACT_NAME);
         final String contactIp = extras.getString(Constants.EXTRA_CONTACT_IP);
 
-        final Contact me = new Contact("me");
-        final Contact friend = new Contact(contactName);
+        final Contact me = new Contact(mUserId, "me");
+        final Contact friend = new Contact(mContactId, contactName);
 
         Intent in = new Intent(Constants.RECEIVER_DHT_FILTER);
         in.putExtra("op", Constants.DHT_OP_CONNECT_TO);
@@ -91,7 +94,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
 
         setRecyclerView();
         setActionBar(contactName, true);
-        mPresenter.loadMessages(0, mContactId);
+        mPresenter.loadMessages(mUserId, mContactId);
     }
 
     @Override
@@ -138,7 +141,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     }
 
     @Override
-    public void loadContactMessages(int sender_id, int user_id) {
+    public void loadContactMessages(String sender_id, String user_id) {
         MessageDatabaseHelper dbHelper = new MessageDatabaseHelper(this);
         List<MessageResponse> messages = dbHelper.getMessagesFromContact(user_id, sender_id);
         showMessages(messages);
