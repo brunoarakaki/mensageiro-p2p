@@ -58,13 +58,12 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mMainPresenter = new MainPresenter();
         mMainPresenter.attachView(this);
 
-//        Toast.makeText(getApplicationContext(), Utils.getIPAddress(true), Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(), Utils.getIPAddress(true), Toast.LENGTH_LONG).show();
 
         if(PermissionUtil.checkPermission(this,
                 Manifest.permission.READ_PHONE_STATE, Constants.PERMISSION_REQUEST_PHONE_STATE)){
             storeUserId();
         }
-
 
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -127,15 +126,12 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                 switch (which){
                     case 0:
                         showEditContactDialog(contact);
-                        showToast("Vamoes editar esse contato ai");
                         break;
                     case 1:
                         deleteConversation(contact);
-                        showToast("Apagando mensagens suspeitas");
                         break;
                     case 2:
                         deleteContact(contact);
-                        showToast("Contato removido");
                         break;
                 }
             }
