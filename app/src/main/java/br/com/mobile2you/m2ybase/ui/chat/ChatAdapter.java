@@ -28,7 +28,6 @@ public class ChatAdapter extends BaseRecyclerViewAdapter {
     }
 
     public void setMessages(List<MessageResponse> messages) {
-        Log.d("Adapter", "trocou");
         mMessages = messages;
         notifyDataChanged();
     }
@@ -67,7 +66,7 @@ public class ChatAdapter extends BaseRecyclerViewAdapter {
         }
 
         public void Bind(final MessageResponse messageResponse){
-            mSenderTextView.setText(messageResponse.getSender().getName());
+            mSenderTextView.setText(messageResponse.getSender().getId());
             mContentTextView.setText(messageResponse.getText());
             mTimestampTextView.setText(messageResponse.getSentAt().toString());
         }

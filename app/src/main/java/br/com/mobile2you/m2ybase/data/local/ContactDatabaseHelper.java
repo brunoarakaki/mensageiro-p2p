@@ -31,7 +31,8 @@ public class ContactDatabaseHelper {
         Cursor cursor =  db.rawQuery("select " +
                 Constants.DB_CONTACT_FIELD_ID + ", " +
                 Constants.DB_CONTACT_FIELD_NAME +  ", " +
-                Constants.DB_CONTACT_FIELD_IP +
+                Constants.DB_CONTACT_FIELD_IP + ", " +
+                Constants.DB_CONTACT_FIELD_PORT +
                 " from " + Constants.DB_CONTACTS_TABLE ,  new String[] {});
         return convertCursorToContacts(cursor);
     }
@@ -48,30 +49,45 @@ public class ContactDatabaseHelper {
         return id;
     }
 
-    public void delete(long id) {
+    public void update(Contact contact) {
         SQLiteDatabase db = _openHelper.getWritableDatabase();
         if (db == null) {
             return;
         }
-        db.delete(Constants.DB_CONTACTS_TABLE, "_id = ?", new String[] { String.valueOf(id) });
+        ContentValues row = convertContactToContentValues(contact);
+        db.update(Constants.DB_CONTACTS_TABLE, row, "_id = ?", new String[] { contact.getId() });
+        db.close();
+    }
+
+
+    public void delete(String id) {
+        SQLiteDatabase db = _openHelper.getWritableDatabase();
+        if (db == null) {
+            return;
+        }
+        db.delete(Constants.DB_CONTACTS_TABLE, "_id = ?", new String[] { id });
         db.close();
     }
 
     private ContentValues convertContactToContentValues(Contact contact){
         ContentValues contentValues = new ContentValues();
+        contentValues.put(Constants.DB_CONTACT_FIELD_ID, contact.getId());
         contentValues.put(Constants.DB_CONTACT_FIELD_NAME, contact.getName());
         contentValues.put(Constants.DB_CONTACT_FIELD_IP, contact.getIp());
+        contentValues.put(Constants.DB_CONTACT_FIELD_PORT, contact.getIp());
         return contentValues;
     }
 
     private List<Contact> convertCursorToContacts(Cursor cursor){
         List<Contact> contacts = new ArrayList<>();
         while (cursor.moveToNext()) {
-            int id = cursor.getInt(0);
+            String id = cursor.getString(0);
             String name = cursor.getString(1);
             String ip = cursor.getString(2);
+            int port = cursor.getInt(3);
             Contact contact = new Contact(id, name);
             contact.setIp(ip);
+            contact.setPort(port);
             contacts.add(contact);
         }
         return contacts;

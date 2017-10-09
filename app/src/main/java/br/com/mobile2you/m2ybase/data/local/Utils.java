@@ -132,4 +132,16 @@ public class Utils {
         return "";
     }
 
+    public static int getAvailablePort() {
+        try {
+            ServerSocket socket = new ServerSocket(0);
+            int port = socket.getLocalPort();
+            socket.close();
+            return port;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
 }

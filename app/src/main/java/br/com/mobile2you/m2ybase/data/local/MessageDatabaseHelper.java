@@ -24,7 +24,7 @@ public class MessageDatabaseHelper {
         _openHelper = new BaseSQLiteOpenHelper(context);
     }
 
-    public List<MessageResponse> getMessagesFromContact(int user_id, int sender_id) {
+    public List<MessageResponse> getMessagesFromContact(String user_id, String sender_id) {
         SQLiteDatabase db = _openHelper.getReadableDatabase();
         if (db == null) {
             return null;
@@ -40,8 +40,7 @@ public class MessageDatabaseHelper {
                 Constants.DB_MESSAGES_FIELD_RECEIVER_ID + " = ?) OR (" +
                 Constants.DB_MESSAGES_FIELD_SENDER_ID + " = ? AND " +
                 Constants.DB_MESSAGES_FIELD_RECEIVER_ID + " = ?)",  new String[] {
-                String.valueOf(sender_id), String.valueOf(user_id),
-                String.valueOf(user_id), String.valueOf(sender_id) });
+                sender_id, user_id, user_id, sender_id });
         return convertCursorToMessages(cursor);
     }
 
@@ -58,12 +57,26 @@ public class MessageDatabaseHelper {
         return id;
     }
 
-    public void delete(long id) {
+    public void delete(String id) {
         SQLiteDatabase db = _openHelper.getWritableDatabase();
         if (db == null) {
             return;
         }
-        db.delete(Constants.DB_MESSAGES_TABLE, "_id = ?", new String[] { String.valueOf(id) });
+        db.delete(Constants.DB_MESSAGES_TABLE, "_id = ?", new String[] { id });
+        db.close();
+    }
+
+    public void deleteConversation(String user_id, String sender_id) {
+        SQLiteDatabase db = _openHelper.getWritableDatabase();
+        if (db == null) {
+            return;
+        }
+        db.delete(Constants.DB_MESSAGES_TABLE, "(" +
+                Constants.DB_MESSAGES_FIELD_SENDER_ID + " = ? AND " +
+                Constants.DB_MESSAGES_FIELD_RECEIVER_ID + " = ?) OR (" +
+                Constants.DB_MESSAGES_FIELD_SENDER_ID + " = ? AND " +
+                Constants.DB_MESSAGES_FIELD_RECEIVER_ID + " = ?)",new String[] {
+                sender_id, user_id, user_id, sender_id });
         db.close();
     }
 
@@ -81,8 +94,8 @@ public class MessageDatabaseHelper {
     private List<MessageResponse> convertCursorToMessages(Cursor cursor){
         List<MessageResponse> messages = new ArrayList<>();
         while (cursor.moveToNext()) {
-            int senderId = cursor.getInt(0);
-            int receiverId = cursor.getInt(1);
+            String senderId = cursor.getString(0);
+            String receiverId = cursor.getString(1);
             String senderName = cursor.getString(2);
             String receiverName = cursor.getString(3);
             String text = cursor.getString(4);

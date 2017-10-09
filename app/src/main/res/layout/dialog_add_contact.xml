@@ -14,20 +14,10 @@
 <EditText
     android:id="@+id/edit_text_contact_name"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content" >
-
-    <requestFocus />
-</EditText>
-
-<TextView
-    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:text="IP do contato" />
-
-<EditText
-    android:id="@+id/edit_text_contact_ip"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content" >
+    android:inputType="textCapSentences"
+    >
+    <requestFocus />
 </EditText>
 
 </LinearLayout>

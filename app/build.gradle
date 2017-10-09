@@ -50,6 +50,8 @@ android {
     packagingOptions {
 
         exclude 'META-INF/*'
+        exclude 'dht/*'
+        exclude 'tracker/*'
 
     }
 }
@@ -107,4 +109,5 @@ dependencies {
     compile files('libs/tomp2p-storage-5.0-Beta8.jar')
     compile files('libs/tomp2p-tracker-5.0-Beta8.jar')
     compile files('libs/weupnp-0.1.2.jar')
+    compile files('libs/dht.jar')
 }

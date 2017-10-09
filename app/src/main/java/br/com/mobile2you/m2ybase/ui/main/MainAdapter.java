@@ -59,7 +59,7 @@ public class MainAdapter extends BaseRecyclerViewAdapter {
 
     public interface OnClicked {
         void onContactClicked(Contact contact);
-
+        boolean onContactLongClicked(Contact contact);
     }
 
     class ConctactViewHolder extends RecyclerView.ViewHolder{
@@ -73,13 +73,19 @@ public class MainAdapter extends BaseRecyclerViewAdapter {
         }
 
         public void Bind(final Contact contact){
-            mNameTextView.setText(contact.getName());
+            mNameTextView.setText(contact.getId());
             mLastMessageTextView.setText("Last message");
             mPictureImageView.setImageResource(R.drawable.ic_smiley_face);
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     mClickListener.onContactClicked(contact);
+                }
+            });
+            itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    return mClickListener.onContactLongClicked(contact);
                 }
             });
         }

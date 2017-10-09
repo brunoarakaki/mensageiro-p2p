@@ -1,6 +1,7 @@
 package br.com.mobile2you.m2ybase.ui.base;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -33,8 +34,14 @@ public class BaseActivity extends AppCompatActivity {
     }
 
     //TOAST METHODS
-    public void showToast(String string) {
-        Toast.makeText(this, string, Toast.LENGTH_SHORT).show();
+    public void showToast(final String string) {
+        final Context context = this;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(context, string, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     //ACTION BAR METHODS

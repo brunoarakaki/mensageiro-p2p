@@ -15,6 +15,9 @@ public class Constants {
     public static final String LANGUAGE_PT = "pt";
     public static final String COUNTRY_BR = "BR";
 
+    // PERMISSION REQUEST CALLBACK ID
+    public static final int PERMISSION_REQUEST_PHONE_STATE = 1;
+
     //API URLs
     public static final String BASE_URL = "http://polls.apiblueprint.org/";
     public static final String LOGIN_URL = BASE_URL + "polls/";
@@ -36,6 +39,7 @@ public class Constants {
     public static final String DB_CONTACT_FIELD_ID = "_id";
     public static final String DB_CONTACT_FIELD_NAME = "name";
     public static final String DB_CONTACT_FIELD_IP = "ip";
+    public static final String DB_CONTACT_FIELD_PORT = "port";
     public static final String DB_MESSAGES_TABLE = "messages";
     public static final String DB_MESSAGES_FIELD_MESSAGE_ID = "_id";
     public static final String DB_MESSAGES_FIELD_SENDER_ID = "sender_id";
@@ -44,11 +48,11 @@ public class Constants {
     public static final String DB_MESSAGES_FIELD_RECEIVER_NAME = "receiver_name";
     public static final String DB_MESSAGES_FIELD_TEXT = "text";
     public static final String DB_MESSAGES_FIELD_SENT_AT = "sent_at";
-    public static final String RECEIVER_DHT_FILTER = "RECEIVER_DHT_FILTER";
-    public static final String RECEIVER_CHAT_FILTER = "RECEIVER_CHAT_FILTER";
+    public static final String FILTER_CHAT_RECEIVER = "FILTER_CHAT_RECEIVER";
+    public static final String FILTER_DHT_CONNECTION = "FILTER_DHT_CONNECTION";
 
-    public static final int DHT_OP_CONNECT_TO = 1;
-    public static final int DHT_OP_SEND = 2;
-    public static final int DHT_OP_CLOSE_CONNECTION = 3;
+    public static final String NSD_SERVICE_NAME = "whatsp2p";
+    public static final String NSD_SERVICE_TYPE = "_whatsp2p._tcp";
+
 }
 

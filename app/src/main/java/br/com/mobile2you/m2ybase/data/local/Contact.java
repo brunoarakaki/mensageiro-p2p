@@ -8,23 +8,24 @@ import java.io.Serializable;
 
 public class Contact implements Serializable {
 
-    private int id;
+    private String id;
     private String name;
     private String ip;
+    private int port;
     private String peerId;
 
-    public Contact(String name) {
+    public Contact(String id) {
         super();
-        this.name = name;
+        this.id = id;
     }
 
-    public Contact(int id, String name) {
+    public Contact(String id, String name) {
         super();
         this.id = id;
         this.name = name;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -32,7 +33,7 @@ public class Contact implements Serializable {
         this.name = name;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
@@ -50,6 +51,14 @@ public class Contact implements Serializable {
 
     public void setPeerId(String peerId) {
         this.peerId = peerId;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
     }
 
 }

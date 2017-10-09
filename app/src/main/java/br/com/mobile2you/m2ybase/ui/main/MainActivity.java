@@ -6,7 +6,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
@@ -17,20 +16,28 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.Toast;
 
+import com.poli.tcc.dht.DHT;
+import com.poli.tcc.dht.DHTNode;
+
+import net.tomp2p.peers.Number160;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import br.com.mobile2you.m2ybase.Constants;
 import br.com.mobile2you.m2ybase.R;
+import br.com.mobile2you.m2ybase.data.local.ChatServer;
 import br.com.mobile2you.m2ybase.data.local.Contact;
-import br.com.mobile2you.m2ybase.data.local.DHT;
-import br.com.mobile2you.m2ybase.data.local.ReceiverThread;
+import br.com.mobile2you.m2ybase.data.local.NodeDiscovery;
+import br.com.mobile2you.m2ybase.data.local.PreferencesHelper;
+import br.com.mobile2you.m2ybase.data.local.ProgressDialogHelper;
 import br.com.mobile2you.m2ybase.data.local.Utils;
-import br.com.mobile2you.m2ybase.data.remote.models.PollsResponse;
-import br.com.mobile2you.m2ybase.data.remote.models.PostsResponse;
-import br.com.mobile2you.m2ybase.data.remote.services.DHTService;
+import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
 import br.com.mobile2you.m2ybase.ui.chat.ChatActivity;
 import butterknife.BindView;
@@ -40,10 +47,22 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
     private MainPresenter mMainPresenter;
     private MainAdapter mAdapter;
+    private String mUserId;
+    private Contact me;
+    private Thread chatThread;
+    private NodeDiscovery nodeDiscovery;
+    private NewMessageBroadcast newMessageBroadcast;
+    private DHTConnectionBroadcast dhtConnectionBroadcast;
+    private ProgressDialogHelper progressDialog;
+    private int mChatPort;
+    private int mDHTPort;
+    private Boolean mInitialized = false;
 
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
 
+    public String trackerAddress = "192.168.1.105";
+    public int trackerPort = 4001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,21 +72,39 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mMainPresenter = new MainPresenter();
         mMainPresenter.attachView(this);
 
-        Toast.makeText(getApplicationContext(), Utils.getIPAddress(true), Toast.LENGTH_LONG).show();
+        newMessageBroadcast = new NewMessageBroadcast();
+        LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(newMessageBroadcast, new IntentFilter(Constants.FILTER_CHAT_RECEIVER));
 
-        final Contact myself = new Contact(android.os.Build.MODEL);
+        dhtConnectionBroadcast = new DHTConnectionBroadcast();
+        LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(dhtConnectionBroadcast, new IntentFilter(Constants.FILTER_DHT_CONNECTION));
+
+        mChatPort = Utils.getAvailablePort();
+        mDHTPort = Utils.getAvailablePort();
+
+        progressDialog = new ProgressDialogHelper(this);
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mAdapter = new MainAdapter(new MainAdapter.OnClicked() {
             @Override
-            public void onContactClicked(Contact contact) {
-                Intent chatIntent = new Intent(getApplicationContext(), ChatActivity.class);
-                chatIntent.putExtra(Constants.EXTRA_CONTACT, contact);
-                chatIntent.putExtra(Constants.EXTRA_MYSELF, myself);
-                startActivity(chatIntent);
+            public void onContactClicked(final Contact contact) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            startChat(contact);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
             }
-        },
-            new View.OnClickListener() {
+
+            @Override
+            public boolean onContactLongClicked(Contact contact) {
+                showContactSettingsDialog(contact);
+                return true;
+            }
+        }, new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     mMainPresenter.loadContacts(v.getContext());
@@ -76,11 +113,43 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mRecyclerView.setAdapter(mAdapter);
         setActionBar("Mensageiro P2P");
 
-        mMainPresenter.loadContacts(this);
+        mUserId = PreferencesHelper.getInstance().getUserId();
+        if (mUserId.equals("")) {
+            showUserNameDialog();
+        } else if (!mInitialized){
+            initialize();
+        }
+    }
 
-        Intent dhtService = new Intent(getApplicationContext(), DHTService.class);
-        dhtService.putExtra("myself", myself);
-        startService(dhtService);
+    public void initialize() {
+        progressDialog.show("Conectando à rede...", 10000, new Runnable() {
+            @Override
+            public void run() {
+                showMessage("Não foi possível conectar na rede DHT!");
+            }
+        });
+        me = new Contact(mUserId);
+        connectToDHT();
+        startChatServer(mChatPort);
+        nodeDiscovery = new NodeDiscovery(getApplicationContext(), mDHTPort);
+        mMainPresenter.loadContacts(this);
+        mInitialized = true;
+    }
+
+    public void startChat(Contact contact) {
+        Intent intent = new Intent(MainActivity.this, ChatActivity.class);
+        intent.putExtra(Constants.EXTRA_MYSELF, me);
+        intent.putExtra(Constants.EXTRA_CONTACT, contact);
+        startActivity(intent);
+    }
+
+    public void showMessage(final String text) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     public void showNewContactDialog(){
@@ -88,6 +157,47 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         View dialogView = li.inflate(R.layout.dialog_add_contact, null);
         // create alert dialog
         AlertDialog alertDialog = getNewContactDialogBuilder(dialogView).create();
+        alertDialog.show();
+    }
+
+    public void showEditContactDialog(Contact contact){
+        LayoutInflater li = LayoutInflater.from(this);
+        View dialogView = li.inflate(R.layout.dialog_add_contact, null);
+        // create alert dialog
+        AlertDialog alertDialog = getEditContactDialogBuilder(dialogView, contact).create();
+        alertDialog.show();
+    }
+
+
+    public void showContactSettingsDialog(final Contact contact){
+        CharSequence options[] = new CharSequence[] {"Editar", "Apagar Mensagens", "Deletar"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(contact.getName());
+        builder.setItems(options, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which){
+                    case 0:
+                        showEditContactDialog(contact);
+                        break;
+                    case 1:
+                        deleteConversation(contact);
+                        break;
+                    case 2:
+                        deleteContact(contact);
+                        break;
+                }
+            }
+        });
+        builder.show();
+    }
+
+    public void showUserNameDialog(){
+        LayoutInflater li = LayoutInflater.from(this);
+        View dialogView = li.inflate(R.layout.dialog_set_username, null);
+        // create alert dialog
+        AlertDialog alertDialog = getUserNameDialogBuilder(dialogView).create();
         alertDialog.show();
     }
 
@@ -99,17 +209,14 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
         final EditText userInput = (EditText) dialogView
                 .findViewById(R.id.edit_text_contact_name);
-        final EditText ipInput = (EditText) dialogView
-                .findViewById(R.id.edit_text_contact_ip);
 
         // set dialog message
         alertDialogBuilder
             .setCancelable(false)
             .setPositiveButton("Adicionar", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog,int id) {
-                    String contactName = userInput.getText().toString();
-                    String contactIp = ipInput.getText().toString();
-                    addContact(contactName, contactIp);
+                    String username = userInput.getText().toString();
+                    addContact(username);
                 }
             })
             .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -121,8 +228,131 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
     }
 
-    public void addContact(String name, String ip){
-        mMainPresenter.addContact(this, name, ip);
+    public AlertDialog.Builder getEditContactDialogBuilder(View dialogView, final Contact contact){
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                this);
+
+        alertDialogBuilder.setView(dialogView);
+
+        final EditText userInput = (EditText) dialogView
+                .findViewById(R.id.edit_text_contact_name);
+
+        userInput.setText(contact.getId());
+
+        // set dialog message
+        alertDialogBuilder
+            .setCancelable(false)
+            .setPositiveButton("Editar", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,int id) {
+                    String username = userInput.getText().toString();
+                    contact.setId(username);
+                    editContact(contact);
+                }
+            })
+            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,int id) {
+                    dialog.cancel();
+                }
+            });
+        return alertDialogBuilder;
+
+    }
+
+    public AlertDialog.Builder getUserNameDialogBuilder(View dialogView){
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                this);
+
+        alertDialogBuilder.setView(dialogView);
+
+        final EditText userInput = (EditText) dialogView
+                .findViewById(R.id.edit_text_user_name);
+
+        // set dialog message
+        alertDialogBuilder
+                .setCancelable(false)
+                .setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog,int id) {
+                        String userName = userInput.getText().toString();
+                        PreferencesHelper.getInstance().putUserId(userName);
+                        mUserId = userName;
+                        initialize();
+                    }
+                });
+        return alertDialogBuilder;
+
+    }
+
+    public void addContact(final String username){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    progressDialog.show("Buscando usuário...");
+                    InetSocketAddress address = (InetSocketAddress) DHT.get(username, "chatAddress");
+                    progressDialog.hide();
+                    if (address != null) {
+                        final String ip = address.getHostName();
+                        final int port = address.getPort();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mMainPresenter.addContact(getApplicationContext(), username, ip, port);
+                            }
+                        });
+                    } else {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(getApplicationContext(), "Usuário não encontrado!", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                } catch (ClassNotFoundException | IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    public void editContact(Contact contact){
+        mMainPresenter.updateContact(this, contact);
+    }
+
+    public void deleteContact(Contact contact){
+        mMainPresenter.deleteContact(this, contact);
+    }
+
+    public void deleteConversation(Contact contact){
+        mMainPresenter.deleteConversation(this, contact);
+    }
+
+    private void connectToDHT() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String mUserId = PreferencesHelper.getInstance().getUserId();
+                    Number160 peerId = DHT.createPeerID(mUserId);
+                    DHTNode thisNode = new DHTNode(peerId);
+                    thisNode.setUsername(mUserId);
+                    thisNode.setIp(Utils.getIPAddress(true));
+                    thisNode.setPort(mChatPort);
+                    DHT.start(thisNode, mDHTPort);
+                    Log.d("DHT", "Broadcasting my chat address: " + thisNode.getIp() + ":" + mChatPort);
+                    DHT.put(mUserId, "chatAddress", new InetSocketAddress(thisNode.getIp(), mChatPort));
+                    if (DHT.connectTo(trackerAddress, trackerPort)) {
+                        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(new Intent(Constants.FILTER_DHT_CONNECTION));
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    private void startChatServer(int port) {
+        chatThread = new Thread(new ChatServer(port, getApplicationContext()));
+        chatThread.start();
     }
 
     @Override
@@ -142,9 +372,28 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (nodeDiscovery != null) {
+            nodeDiscovery.startLookup();
+        }
+    }
+
+    protected void onPause() {
+        super.onPause();
+        if (nodeDiscovery != null) {
+            nodeDiscovery.stopLookup();
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         mMainPresenter.detachView();
+        DHT.shutDown();
+        nodeDiscovery.shutdown();
+        LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(newMessageBroadcast);
+        LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(dhtConnectionBroadcast);
     }
 
     @Override
@@ -165,5 +414,23 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     @Override
     public void showContacts(List<Contact> contacts) {
         mAdapter.setContacts(contacts);
+    }
+
+    private class NewMessageBroadcast extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            MessageResponse mes = (MessageResponse) intent.getSerializableExtra("message");
+            Toast.makeText(MainActivity.this, "New message received from " + mes.getSender().getId(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private class DHTConnectionBroadcast extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            progressDialog.hide();
+            showMessage("Connected to DHT network!");
+        }
     }
 }

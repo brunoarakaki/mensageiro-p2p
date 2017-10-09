@@ -8,8 +8,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES" />
-    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <!-- <permission -->
     <!-- android:name="com.parse.starter.permission.C2D_MESSAGE" -->
@@ -18,7 +17,7 @@
     <!-- <uses-permission android:name="br.com.mobile2you.pizzaprime.pizzaprime.permission.C2D_MESSAGE" /> -->
     <application
         android:name=".BaseApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
@@ -36,9 +35,6 @@
             android:value="d9aa34977d8b9166187cc83674aea00089585509" />
 
         <activity android:name=".ui.chat.ChatActivity"></activity>
-        <service
-            android:name=".data.remote.services.DHTService" >
-        </service>
     </application>
 
 </manifest>
