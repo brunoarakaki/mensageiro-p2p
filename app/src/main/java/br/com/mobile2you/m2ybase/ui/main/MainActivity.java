@@ -122,7 +122,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     }
 
     public void initialize() {
-        progressDialog.show("Conectando à rede...", 10000, new Runnable() {
+        progressDialog.show("Conectando à rede...", 100, new Runnable() {
             @Override
             public void run() {
                 showMessage("Não foi possível conectar na rede DHT!");
@@ -201,6 +201,14 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         alertDialog.show();
     }
 
+    public void showEditUserNameDialog(){
+        LayoutInflater li = LayoutInflater.from(this);
+        View dialogView = li.inflate(R.layout.dialog_set_username, null);
+        // create alert dialog
+        AlertDialog alertDialog = editUserNameDialogBuilder(dialogView).create();
+        alertDialog.show();
+    }
+
     public AlertDialog.Builder getNewContactDialogBuilder(View dialogView){
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
                 this);
@@ -276,6 +284,31 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                         PreferencesHelper.getInstance().putUserId(userName);
                         mUserId = userName;
                         initialize();
+                    }
+                });
+        return alertDialogBuilder;
+
+    }
+
+
+    public AlertDialog.Builder editUserNameDialogBuilder(View dialogView){
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                this);
+
+        alertDialogBuilder.setView(dialogView);
+
+        final EditText userInput = (EditText) dialogView
+                .findViewById(R.id.edit_text_user_name);
+        userInput.setText(mUserId);
+
+        // set dialog message
+        alertDialogBuilder
+                .setCancelable(false)
+                .setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog,int id) {
+                        String userName = userInput.getText().toString();
+                        PreferencesHelper.getInstance().putUserId(userName);
+                        mUserId = userName;
                     }
                 });
         return alertDialogBuilder;
@@ -369,10 +402,19 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                 showNewContactDialog();
                 break;
             case R.id.action_edit_info:
+                showEditUserNameDialog();
                 break;
             case R.id.action_view_dht:
                 break;
             case R.id.action_reconnect:
+                ProgressDialogHelper pd = new ProgressDialogHelper(this);
+                pd.show("Conectando à rede...", 10000, new Runnable() {
+                    @Override
+                    public void run() {
+                        showMessage("Não foi possível conectar na rede DHT!");
+                    }
+                });
+                connectToDHT();
                 break;
             case R.id.action_direct_connection:
                 break;
