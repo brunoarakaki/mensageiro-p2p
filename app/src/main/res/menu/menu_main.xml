@@ -8,4 +8,20 @@
         android:title="@string/menu_add_contact"
         android:icon="@drawable/ic_add_person"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_edit_info"
+        android:title="@string/menu_edit_info"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_view_dht"
+        android:title="@string/menu_view_dht"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_reconnect"
+        android:title="@string/menu_reconnect"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_direct_connection"
+        android:title="@string/menu_direct_connection"
+        app:showAsAction="never" />
 </menu>

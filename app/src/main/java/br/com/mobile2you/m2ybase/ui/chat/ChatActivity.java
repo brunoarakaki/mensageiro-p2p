@@ -133,22 +133,6 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(messageBroadcast, intentFilterMessage );
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_add_person) {
-//            aperta aqui pra dar refresh nos dados
-
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
     private void updateActionBar() {
         runOnUiThread(new Runnable() {
             @Override

@@ -364,8 +364,19 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_add_person) {
-            showNewContactDialog();
+        switch (id) {
+            case R.id.action_add_person:
+                showNewContactDialog();
+                break;
+            case R.id.action_edit_info:
+                break;
+            case R.id.action_view_dht:
+                break;
+            case R.id.action_reconnect:
+                break;
+            case R.id.action_direct_connection:
+                break;
+
         }
 
         return super.onOptionsItemSelected(item);

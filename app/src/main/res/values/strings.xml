@@ -4,6 +4,10 @@
 
 
     <string name="menu_add_contact">Adicionar Contato</string>
+    <string name="menu_edit_info">Editar Nome</string>
+    <string name="menu_view_dht">Ver rede DHT</string>
+    <string name="menu_reconnect">Reconectar à rede</string>
+    <string name="menu_direct_connection">Conexão direta</string>
 
     <!--DIALOG MESSAGES-->
     <string name="progress_dialog_standard_msg">Aguarde um momento.</string>
