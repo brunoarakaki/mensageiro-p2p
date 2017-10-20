@@ -2,6 +2,11 @@ package br.com.mobile2you.m2ybase.data.local;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Base64;
+
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 import br.com.mobile2you.m2ybase.Constants;
 
@@ -14,6 +19,9 @@ public class PreferencesHelper {
 
     public static final String PREF_SESSION_COOKIE = SHARED_PREFERENCES_NAME + ".PREF_SESSION_COOKIE";
     public static final String PREF_USER_ID = SHARED_PREFERENCES_NAME + ".PREF_USER_ID";
+
+    public static final String PREF_PRIVATE_KEY = SHARED_PREFERENCES_NAME + ".PREF_PRIVATE_KEY";
+    public static final String PREF_PUBLIC_KEY = SHARED_PREFERENCES_NAME + ".PREF_PUBLIC_KEY";
 
     private SharedPreferences mSharedPreferences;
 
@@ -47,6 +55,20 @@ public class PreferencesHelper {
 
     public void putUserId(String id){
         mSharedPreferences.edit().putString(PREF_USER_ID, id).apply();
+    }
+
+    //TO-DO: REMOVE
+    public byte[] getPrivateKey(){
+        return Base64.decode(mSharedPreferences.getString(PREF_PRIVATE_KEY, ""), Base64.DEFAULT);
+    }
+    public void putPrivateKey(PrivateKey privateKey){
+        mSharedPreferences.edit().putString(PREF_PRIVATE_KEY, Base64.encodeToString(privateKey.getEncoded(), Base64.DEFAULT)).apply();
+    }
+    public byte[] getPublicKey(){
+        return Base64.decode(mSharedPreferences.getString(PREF_PUBLIC_KEY, ""), Base64.DEFAULT);
+    }
+    public void putPublicKey(PublicKey publicKey){
+        mSharedPreferences.edit().putString(PREF_PUBLIC_KEY, Base64.encodeToString(publicKey.getEncoded(), Base64.DEFAULT)).apply();
     }
 
     public String getUserId(){

@@ -2,6 +2,9 @@ package com.poli.tcc.dht;
 import net.tomp2p.peers.Number160;
 
 import java.io.Serializable;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 /**
  * Created by mayerlevy on 9/26/17.
@@ -17,6 +20,7 @@ public class DHTNode implements Serializable {
     private Number160 peerID;
     private String ip;
     private int port;
+    private KeyPair signKeyPair;
 
     public int getPort() {
 		return port;
@@ -53,5 +57,13 @@ public class DHTNode implements Serializable {
     public void setIp(String ip) {
         this.ip = ip;
     }
+
+	public KeyPair getSignKeyPair() {
+		return signKeyPair;
+	}
+
+	public void setSignKeyPair(KeyPair keyPair) {
+		this.signKeyPair = keyPair;
+	}
 
 }

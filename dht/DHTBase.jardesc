@@ -13,6 +13,11 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
+        <file path="/DHTBase/.DS_Store"/>
+        <file path="/DHTBase/DHTBase.jardesc"/>
         <javaElement handleIdentifier="=DHTBase/src"/>
+        <file path="/DHTBase/.gitignore"/>
+        <file path="/DHTBase/.classpath"/>
+        <file path="/DHTBase/.project"/>
     </selectedElements>
 </jardesc>

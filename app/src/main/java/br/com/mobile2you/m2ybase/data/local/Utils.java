@@ -5,102 +5,56 @@ package br.com.mobile2you.m2ybase.data.local;
  */
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 
-import com.google.gson.Gson;
+import org.spongycastle.jce.X509Principal;
+import org.spongycastle.jce.provider.BouncyCastleProvider;
+import org.spongycastle.x509.X509V3CertificateGenerator;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-//import org.apache.http.conn.util.InetAddressUtils;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.SignatureException;
+import java.security.UnrecoverableEntryException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
+import br.com.mobile2you.m2ybase.Constants;
 
 public class Utils {
 
-    /**
-     * Convert byte array to hex string
-     * @param bytes
-     * @return
-     */
-    public static String bytesToHex(byte[] bytes) {
-        StringBuilder sbuf = new StringBuilder();
-        for(int idx=0; idx < bytes.length; idx++) {
-            int intVal = bytes[idx] & 0xff;
-            if (intVal < 0x10) sbuf.append("0");
-            sbuf.append(Integer.toHexString(intVal).toUpperCase());
-        }
-        return sbuf.toString();
-    }
+    static { Security.addProvider(new BouncyCastleProvider());  }
 
-    /**
-     * Get utf8 byte array.
-     * @param str
-     * @return  array of NULL if error was found
-     */
-    public static byte[] getUTF8Bytes(String str) {
-        try { return str.getBytes("UTF-8"); } catch (Exception ex) { return null; }
-    }
+    public static String DEFAULT_KEYSTORE_PASSWORD = "android";
+    public static String DEFAULT_ENTRY_PASSWORD = "123456";
 
-    /**
-     * Load UTF8withBOM or any ansi text file.
-     * @param filename
-     * @return
-     * @throws java.io.IOException
-     */
-    public static String loadFileAsString(String filename) throws java.io.IOException {
-        final int BUFLEN=1024;
-        BufferedInputStream is = new BufferedInputStream(new FileInputStream(filename), BUFLEN);
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(BUFLEN);
-            byte[] bytes = new byte[BUFLEN];
-            boolean isUTF8=false;
-            int read,count=0;
-            while((read=is.read(bytes)) != -1) {
-                if (count==0 && bytes[0]==(byte)0xEF && bytes[1]==(byte)0xBB && bytes[2]==(byte)0xBF ) {
-                    isUTF8=true;
-                    baos.write(bytes, 3, read-3); // drop UTF8 bom marker
-                } else {
-                    baos.write(bytes, 0, read);
-                }
-                count+=read;
-            }
-            return isUTF8 ? new String(baos.toByteArray(), "UTF-8") : new String(baos.toByteArray());
-        } finally {
-            try{ is.close(); } catch(Exception ex){}
-        }
-    }
-
-    /**
-     * Returns MAC address of the given interface name.
-     * @param interfaceName eth0, wlan0 or NULL=use first interface
-     * @return  mac address or empty string
-     */
-    public static String getMACAddress(String interfaceName) {
-        try {
-            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-            for (NetworkInterface intf : interfaces) {
-                if (interfaceName != null) {
-                    if (!intf.getName().equalsIgnoreCase(interfaceName)) continue;
-                }
-                byte[] mac = intf.getHardwareAddress();
-                if (mac==null) return "";
-                StringBuilder buf = new StringBuilder();
-                for (int idx=0; idx<mac.length; idx++)
-                    buf.append(String.format("%02X:", mac[idx]));
-                if (buf.length()>0) buf.deleteCharAt(buf.length()-1);
-                return buf.toString();
-            }
-        } catch (Exception ex) { } // for now eat exceptions
-        return "";
-        /*try {
-            // this is so Linux hack
-            return loadFileAsString("/sys/class/net/" +interfaceName + "/address").toUpperCase().trim();
-        } catch (IOException ex) {
-            return null;
-        }*/
-    }
-
-    /**
+    /*
      * Get IP address from first non-localhost interface
      * @param ipv4  true=return ipv4, false=return ipv6
      * @return  address or empty string
@@ -142,6 +96,122 @@ public class Utils {
             e.printStackTrace();
             return 0;
         }
+    }
+
+    public static KeyPair getKeyPairFromKeyStore(Context context, String type) {
+        try {
+            FileInputStream inputStream = null;
+            try {
+                inputStream = context.openFileInput("keystore.pem");
+            } catch (FileNotFoundException e) {
+                System.out.println("Keystore file not found. A new one will be created...");
+            }
+            KeyStore ks = KeyStore.getInstance("BKS", "BC");
+            ks.load(inputStream, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
+            KeyStore.ProtectionParameter protectionParameter = new KeyStore.PasswordProtection(DEFAULT_ENTRY_PASSWORD.toCharArray());
+            KeyStore.Entry entry = ks.getEntry(Constants.PGP_KEY_ALIAS + "_" + type, protectionParameter);
+            if (inputStream != null) {
+                inputStream.close();
+            }
+            if (entry == null) {
+                return generateNewKeyPair(context, type);
+            }
+            PrivateKey privateKey = ((KeyStore.PrivateKeyEntry) entry).getPrivateKey();
+            PublicKey publicKey = ks.getCertificate(Constants.PGP_KEY_ALIAS + "_" + type).getPublicKey();
+            return new KeyPair(publicKey, privateKey);
+        } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException | UnrecoverableEntryException | NoSuchProviderException | IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static KeyPair generateNewKeyPair(Context context, String type) {
+        try {
+            FileInputStream inputStream = null;
+            try {
+                inputStream = context.openFileInput("keystore.pem");
+            } catch (FileNotFoundException e) {
+                System.out.println("Keystore file not found. A new one will be created...");
+            }
+            KeyStore ks = KeyStore.getInstance("BKS", "BC");
+            ks.load(inputStream, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
+            if (inputStream!= null) {
+                inputStream.close();
+            }
+
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(type, "BC");
+            SecureRandom secRandom = SecureRandom.getInstance("SHA1PRNG");
+            kpg.initialize(1024, secRandom);
+
+            KeyPair keyPair = kpg.generateKeyPair();
+            X509Certificate cert = generateCertificate(type, keyPair);
+
+            KeyStore.ProtectionParameter protectionParameter = new KeyStore.PasswordProtection(DEFAULT_ENTRY_PASSWORD.toCharArray());
+            KeyStore.PrivateKeyEntry entry = new KeyStore.PrivateKeyEntry(keyPair.getPrivate(), new X509Certificate[] {cert});
+            ks.setEntry(Constants.PGP_KEY_ALIAS + "_" + type, entry, protectionParameter);
+            FileOutputStream outputStream;
+            outputStream = context.openFileOutput("keystore.pem", Context.MODE_PRIVATE);
+            ks.store(outputStream, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
+            outputStream.close();
+
+            return keyPair;
+
+        } catch (KeyStoreException | SignatureException | InvalidKeyException | NoSuchProviderException | CertificateException | IOException | NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+
+    }
+
+    private static X509Certificate generateCertificate(String type, KeyPair keyPair) throws SignatureException, InvalidKeyException {
+        X509V3CertificateGenerator v3CertGen = new X509V3CertificateGenerator();
+        v3CertGen.setSerialNumber(BigInteger.valueOf(Math.abs(new SecureRandom().nextInt())));
+        v3CertGen.setIssuerDN(new X509Principal("CN=whatsp2p, OU=None, O=None L=None, C=None"));
+        v3CertGen.setNotBefore(new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30));
+        v3CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 365*10)));
+        v3CertGen.setSubjectDN(new X509Principal("CN=whatsp2p, OU=None, O=None L=None, C=None"));
+        v3CertGen.setPublicKey(keyPair.getPublic());
+        v3CertGen.setSignatureAlgorithm("SHA1with" + type);
+        return v3CertGen.generateX509Certificate(keyPair.getPrivate());
+    }
+
+    static PublicKey getPublicKeyFromEncoded(String type, byte[] encoded) {
+        try {
+            X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(encoded);
+            KeyFactory keyFactory = KeyFactory.getInstance(type, "BC");
+            return keyFactory.generatePublic(pubKeySpec);
+        } catch (NoSuchProviderException | InvalidKeySpecException | NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static byte[] encrypt(PublicKey publicKey, String plainText) {
+        try {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+            return cipher.doFinal(plainText.getBytes());
+        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    static byte[] decrypt(PrivateKey privateKey, byte[] encodedText) {
+        try {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            return cipher.doFinal(encodedText);
+        } catch (InvalidKeyException | NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    static PrivateKey getPrivateKeyFromKeyStore(Context context, String type) {
+        KeyPair keyPair = getKeyPairFromKeyStore(context, type);
+        return keyPair.getPrivate();
     }
 
 }

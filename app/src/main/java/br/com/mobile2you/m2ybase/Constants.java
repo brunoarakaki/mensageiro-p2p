@@ -40,6 +40,8 @@ public class Constants {
     public static final String DB_CONTACT_FIELD_NAME = "name";
     public static final String DB_CONTACT_FIELD_IP = "ip";
     public static final String DB_CONTACT_FIELD_PORT = "port";
+    public static final String DB_CONTACT_FIELD_SIGN_ENCODED_KEY = "sign_encoded_key";
+    public static final String DB_CONTACT_FIELD_CHAT_ENCODED_KEY = "chat_encoded_key";
     public static final String DB_MESSAGES_TABLE = "messages";
     public static final String DB_MESSAGES_FIELD_MESSAGE_ID = "_id";
     public static final String DB_MESSAGES_FIELD_SENDER_ID = "sender_id";
@@ -53,6 +55,8 @@ public class Constants {
 
     public static final String NSD_SERVICE_NAME = "whatsp2p";
     public static final String NSD_SERVICE_TYPE = "_whatsp2p._tcp";
+
+    public static final String PGP_KEY_ALIAS = "whatsp2p";
 
 }
 

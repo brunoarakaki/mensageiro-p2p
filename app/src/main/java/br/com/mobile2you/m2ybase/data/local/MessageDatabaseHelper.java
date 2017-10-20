@@ -86,7 +86,7 @@ public class MessageDatabaseHelper {
         contentValues.put(Constants.DB_MESSAGES_FIELD_RECEIVER_ID, message.getReceiver().getId());
         contentValues.put(Constants.DB_MESSAGES_FIELD_SENDER_NAME, message.getSender().getName());
         contentValues.put(Constants.DB_MESSAGES_FIELD_RECEIVER_NAME, message.getReceiver().getName());
-        contentValues.put(Constants.DB_MESSAGES_FIELD_TEXT, message.getText());
+        contentValues.put(Constants.DB_MESSAGES_FIELD_TEXT, message.getPlainText());
         contentValues.put(Constants.DB_MESSAGES_FIELD_SENT_AT, message.getSentAt().getTime());
         return contentValues;
     }

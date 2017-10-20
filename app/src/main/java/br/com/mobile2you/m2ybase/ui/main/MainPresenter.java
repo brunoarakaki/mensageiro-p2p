@@ -2,6 +2,7 @@ package br.com.mobile2you.m2ybase.ui.main;
 
 import android.content.Context;
 
+import java.security.PublicKey;
 import java.util.List;
 import java.util.Random;
 
@@ -73,46 +74,26 @@ public class MainPresenter extends BasePresenter<MainMvpView> {
                 });
     }
 
-//    public void loadQuestions() {
-//        mMainMvpView.showProgress(true);
-//        mSubscription = getPollsOberservable().subscribe(new Subscriber<List<PollsResponse>>() {
-//            @Override
-//            public void onCompleted() {
-//                mMainMvpView.showProgress(false);
-//            }
-//
-//            @Override
-//            public void onError(Throwable e) {
-//                mMainMvpView.showProgress(false);
-//                mMainMvpView.showError(e.getMessage());
-//            }
-//
-//            @Override
-//            public void onNext(List<PollsResponse> pollsResponses) {
-//                mCachedPolls = pollsResponses;
-//                if (pollsResponses.isEmpty()) {
-//                    mMainMvpView.showEmptyQuestions();
-//                } else {
-//                    mMainMvpView.showQuestions(pollsResponses);
-//                }
-//            }
-//        });
-//    }
-
     public void loadContacts(Context context){
         ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
         mCachedContacts = dbHelper.getContacts();
         mMainMvpView.showContacts(mCachedContacts);
     }
 
-    public void addContact(Context context, String username, String ip, int port){
+    public void addContact(Context context, Contact contact) {
         ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
-        Contact contact = new Contact(username);
-        contact.setIp(ip);
-        contact.setPort(port);
         dbHelper.add(contact);
         mCachedContacts.add(contact);
         mMainMvpView.showContacts(mCachedContacts);
+    }
+
+    public void addContact(Context context, String username, String ip, int port, PublicKey signPublicKey, PublicKey chatPublicKey){
+        Contact contact = new Contact(username);
+        contact.setIp(ip);
+        contact.setPort(port);
+        contact.setSignPublicKey(signPublicKey);
+        contact.setChatPublicKey(chatPublicKey);
+        addContact(context, contact);
 
     }
 
