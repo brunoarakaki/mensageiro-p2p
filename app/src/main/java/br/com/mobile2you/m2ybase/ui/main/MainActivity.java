@@ -91,7 +91,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                     @Override
                     public void run() {
                         try {
-                            startChat(contact);
+                            startChat(contact, false);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -136,10 +136,11 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mInitialized = true;
     }
 
-    public void startChat(Contact contact) {
+    public void startChat(Contact contact, boolean directConnection) {
         Intent intent = new Intent(MainActivity.this, ChatActivity.class);
         intent.putExtra(Constants.EXTRA_MYSELF, me);
         intent.putExtra(Constants.EXTRA_CONTACT, contact);
+        intent.putExtra(Constants.EXTRA_DIRECT_CONNECTION, directConnection);
         startActivity(intent);
     }
 
@@ -206,6 +207,14 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         View dialogView = li.inflate(R.layout.dialog_set_username, null);
         // create alert dialog
         AlertDialog alertDialog = editUserNameDialogBuilder(dialogView).create();
+        alertDialog.show();
+    }
+
+    public void showDirectConnectionDialog(){
+        LayoutInflater li = LayoutInflater.from(this);
+        View dialogView = li.inflate(R.layout.dialog_direct_connection, null);
+        // create alert dialog
+        AlertDialog alertDialog = directConnectionDialogBuilder(dialogView).create();
         alertDialog.show();
     }
 
@@ -290,7 +299,6 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
     }
 
-
     public AlertDialog.Builder editUserNameDialogBuilder(View dialogView){
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
                 this);
@@ -309,6 +317,34 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                         String userName = userInput.getText().toString();
                         PreferencesHelper.getInstance().putUserId(userName);
                         mUserId = userName;
+                    }
+                });
+        return alertDialogBuilder;
+
+    }
+
+    public AlertDialog.Builder directConnectionDialogBuilder(View dialogView){
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                this);
+
+        alertDialogBuilder.setView(dialogView);
+
+//        final EditText editTextName = (EditText) dialogView
+//                .findViewById(R.id.edit_text_user_name);
+        final EditText editTextIP = (EditText) dialogView
+                .findViewById(R.id.edit_text_contact_ip);
+        final EditText editTextPort = (EditText) dialogView
+                .findViewById(R.id.edit_text_contact_port);
+
+        // set dialog message
+        alertDialogBuilder
+                .setCancelable(false)
+                .setPositiveButton("Connectar", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog,int id) {
+                        String name = "Conexão Direta";//editTextName.getText().toString();
+                        String ip = editTextIP.getText().toString();
+                        int port = Integer.parseInt(editTextPort.getText().toString());
+                        createDirectConnection(name, ip, port);
                     }
                 });
         return alertDialogBuilder;
@@ -357,6 +393,13 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
     public void deleteConversation(Contact contact){
         mMainPresenter.deleteConversation(this, contact);
+    }
+
+    public void createDirectConnection(String name, String ip, int port) {
+        Contact contact = new Contact(name);
+        contact.setIp(ip);
+        contact.setPort(port);
+        startChat(contact, true);
     }
 
     private void connectToDHT() {
@@ -417,6 +460,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                 connectToDHT();
                 break;
             case R.id.action_direct_connection:
+                showDirectConnectionDialog();
                 break;
 
         }
