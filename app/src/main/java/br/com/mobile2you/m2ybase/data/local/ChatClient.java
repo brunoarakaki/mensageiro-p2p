@@ -4,17 +4,9 @@ package br.com.mobile2you.m2ybase.data.local;
  * Created by mayerlevy on 9/30/17.
  */
 
-import android.content.Context;
-import android.content.Intent;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import com.poli.tcc.dht.DHT;
-import com.poli.tcc.dht.DHTMessage;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -61,7 +53,7 @@ public class ChatClient {
             if (this.isConnected()) {
                 ObjectOutputStream oos = new ObjectOutputStream(this.client.getOutputStream());
                 oos.writeObject(message);
-                Log.d("Chat", "Message sent: " + message.getText());
+                Log.d("Chat", "Message sent: " + message.getPlainText());
                 return true;
             }
         } catch (IOException e) {

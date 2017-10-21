@@ -26,7 +26,7 @@ public class ChatPresenter extends BasePresenter<ChatMvpView> {
         mChatMvpView.loadContactMessages(user_id, sender_id);
     }
 
-    public void sendMessage(MessageResponse messageResponse){
+    public void newMessage(MessageResponse messageResponse){
         mChatMvpView.addMessage(messageResponse);
         mChatMvpView.saveMessage(messageResponse);
 //        long id = mChatMvpView.saveMessage(messageResponse);

@@ -19,20 +19,23 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.poli.tcc.dht.DHT;
+import com.poli.tcc.dht.DHTException;
 import com.poli.tcc.dht.DHTNode;
 
+import net.tomp2p.dht.FuturePut;
 import net.tomp2p.peers.Number160;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.security.KeyPair;
+import java.security.PublicKey;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import br.com.mobile2you.m2ybase.Constants;
 import br.com.mobile2you.m2ybase.R;
 import br.com.mobile2you.m2ybase.data.local.ChatServer;
 import br.com.mobile2you.m2ybase.data.local.Contact;
+import br.com.mobile2you.m2ybase.data.local.ContactDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.local.NodeDiscovery;
 import br.com.mobile2you.m2ybase.data.local.PreferencesHelper;
 import br.com.mobile2you.m2ybase.data.local.ProgressDialogHelper;
@@ -40,6 +43,7 @@ import br.com.mobile2you.m2ybase.data.local.Utils;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
 import br.com.mobile2you.m2ybase.ui.chat.ChatActivity;
+import br.com.mobile2you.m2ybase.utils.exceptions.*;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -61,7 +65,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
 
-    public String trackerAddress = "192.168.1.105";
+    public String trackerAddress = "13.59.232.73";
+//    public String trackerAddress = "192.168.1.105";
     public int trackerPort = 4001;
 
     @Override
@@ -122,16 +127,16 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     }
 
     public void initialize() {
-        progressDialog.show("Conectando à rede...", 100, new Runnable() {
+        progressDialog.show("Conectando à rede...", 20000, new Runnable() {
             @Override
             public void run() {
                 showMessage("Não foi possível conectar na rede DHT!");
             }
         });
         me = new Contact(mUserId);
+        nodeDiscovery = new NodeDiscovery(getApplicationContext(), mDHTPort);
         connectToDHT();
         startChatServer(mChatPort);
-        nodeDiscovery = new NodeDiscovery(getApplicationContext(), mDHTPort);
         mMainPresenter.loadContacts(this);
         mInitialized = true;
     }
@@ -357,27 +362,35 @@ public class MainActivity extends BaseActivity implements MainMvpView {
             public void run() {
                 try {
                     progressDialog.show("Buscando usuário...");
-                    InetSocketAddress address = (InetSocketAddress) DHT.get(username, "chatAddress");
-                    progressDialog.hide();
-                    if (address != null) {
-                        final String ip = address.getHostName();
-                        final int port = address.getPort();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mMainPresenter.addContact(getApplicationContext(), username, ip, port);
-                            }
-                        });
-                    } else {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(getApplicationContext(), "Usuário não encontrado!", Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                    final PublicKey signPublicKey = (PublicKey) DHT.get(username);
+                    if (signPublicKey == null) {
+                        throw new ContactNotFoundException();
                     }
+                    final InetSocketAddress address = (InetSocketAddress) DHT.getProtected("chatAddress", signPublicKey);
+                    final PublicKey chatPublicKey = (PublicKey) DHT.getProtected("chatPublicKey", signPublicKey);
+                    if (address == null || chatPublicKey == null) {
+                        throw new ContactNotFoundException();
+                    }
+                    final String ip = address.getHostName();
+                    final int port = address.getPort();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mMainPresenter.addContact(getApplicationContext(), username, ip, port, signPublicKey, chatPublicKey);
+                        }
+                    });
+                    progressDialog.hide();
                 } catch (ClassNotFoundException | IOException e) {
                     e.printStackTrace();
+                    progressDialog.hide();
+                } catch (ContactNotFoundException e) {
+                    progressDialog.hide();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getApplicationContext(), "Usuário não encontrado!", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
             }
         }).start();
@@ -410,16 +423,31 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                     String mUserId = PreferencesHelper.getInstance().getUserId();
                     Number160 peerId = DHT.createPeerID(mUserId);
                     DHTNode thisNode = new DHTNode(peerId);
+                    KeyPair signKeyPair = Utils.getKeyPairFromKeyStore(getApplicationContext(), "DSA");
+                    KeyPair chatKeyPair = Utils.getKeyPairFromKeyStore(getApplicationContext(), "RSA");
+                    if (signKeyPair == null || chatKeyPair == null) {
+                        throw new KeyPairNullException();
+                    }
                     thisNode.setUsername(mUserId);
                     thisNode.setIp(Utils.getIPAddress(true));
                     thisNode.setPort(mChatPort);
+                    thisNode.setSignKeyPair(signKeyPair);
+                    me.setIp(Utils.getIPAddress(true));
+                    me.setPort(mChatPort);
+                    me.setSignPublicKey(signKeyPair.getPublic());
+                    me.setChatPublicKey(chatKeyPair.getPublic());
                     DHT.start(thisNode, mDHTPort);
-                    Log.d("DHT", "Broadcasting my chat address: " + thisNode.getIp() + ":" + mChatPort);
-                    DHT.put(mUserId, "chatAddress", new InetSocketAddress(thisNode.getIp(), mChatPort));
                     if (DHT.connectTo(trackerAddress, trackerPort)) {
                         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(new Intent(Constants.FILTER_DHT_CONNECTION));
+                    } else {
+                        nodeDiscovery.startLookup();
                     }
-                } catch (Exception e) {
+                } catch (DHTException.UsernameAlreadyTakenException e) {
+                    showToast("Username already taken!");
+                } catch (KeyPairNullException e) {
+                    showToast("Couldn' generate KeyPair!");
+                    e.printStackTrace();
+                } catch (ClassNotFoundException | IOException e) {
                     e.printStackTrace();
                 }
             }
@@ -471,9 +499,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     @Override
     protected void onResume() {
         super.onResume();
-        if (nodeDiscovery != null) {
-            nodeDiscovery.startLookup();
-        }
+        mMainPresenter.loadContacts(this);
     }
 
     protected void onPause() {
@@ -519,6 +545,10 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         public void onReceive(Context context, Intent intent) {
             MessageResponse mes = (MessageResponse) intent.getSerializableExtra("message");
             Toast.makeText(MainActivity.this, "New message received from " + mes.getSender().getId(), Toast.LENGTH_SHORT).show();
+            ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
+            if (dbHelper.search(mes.getSender().getId()).isEmpty()) {
+                mMainPresenter.addContact(getApplicationContext(), mes.getSender());
+            }
         }
     }
 
@@ -527,7 +557,29 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         @Override
         public void onReceive(Context context, Intent intent) {
             progressDialog.hide();
-            showMessage("Connected to DHT network!");
+            try {
+                DHT.verify();
+                Log.i("DHT", "[DHT] Broadcasting my chat address: " + me.getIp() + ":" + mChatPort);
+                FuturePut fput = DHT.putProtected("chatAddress", new InetSocketAddress(me.getIp(), mChatPort));
+                if (fput.isFailed()) {
+                    Log.i("DHT", "[DHT] Chat address update failed: " + fput.failedReason());
+                    showMessage("Chat address update failed!");
+                }
+                Log.i("DHT", "[DHT] Broadcasting my public chat key");
+                fput = DHT.putProtected("chatPublicKey", me.getChatPublicKey());
+                if (fput.isFailed()) {
+                    Log.i("DHT", "[DHT] Chat public key update failed: " + fput.failedReason());
+                    showMessage("Chat public key update failed!");
+                }
+                showMessage("Connected to DHT network!");
+            } catch (DHTException.UsernameAlreadyTakenException e) {
+                e.printStackTrace();
+                showMessage("Username already taken!");
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

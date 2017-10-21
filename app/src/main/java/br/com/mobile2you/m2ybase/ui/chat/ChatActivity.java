@@ -1,5 +1,4 @@
 package br.com.mobile2you.m2ybase.ui.chat;
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -31,9 +30,11 @@ import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.local.ContactDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.local.MessageDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.local.ProgressDialogHelper;
+import br.com.mobile2you.m2ybase.data.local.Utils;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
 import br.com.mobile2you.m2ybase.utils.helpers.DialogHelper;
+import br.com.mobile2you.m2ybase.utils.exceptions.CouldNotEncryptException;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -103,38 +104,48 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String text = mMessageEditText.getText().toString();
-                if (!text.isEmpty()) {
-                    final MessageResponse message = new MessageResponse(me, friend, text);
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                if (friend.getIp() == null) {
-                                    progressDialog.show("Enviando mensagem...");
-                                    lookupAndConnect();
-                                    updateActionBar();
+                try {
+                    final String text = mMessageEditText.getText().toString();
+                    byte[] encryptedText = Utils.encrypt(friend.getChatPublicKey(), text);
+                    if (encryptedText == null) {
+                        throw new CouldNotEncryptException();
+                    }
+                    if (!text.isEmpty()) {
+                        final MessageResponse message = new MessageResponse(me, friend);
+                        message.setEncodedText(encryptedText);
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    if (friend.getIp() == null) {
+                                        progressDialog.show("Enviando mensagem...");
+                                        lookupAndConnect();
+                                        updateActionBar();
+                                        progressDialog.hide();
+                                    }
+                                    if (chatClient.isConnected() && chatClient.sendMessage(message)) {
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                message.setPlainText(text);
+                                                mPresenter.newMessage(message);
+                                                mMessageEditText.setText("");
+                                            }
+                                        });
+                                    } else {
+                                        showToast("Não foi possível enviar a mensagem");
+                                    }
+                                } catch (IOException | InterruptedException | ExecutionException e) {
                                     progressDialog.hide();
+                                    e.printStackTrace();
                                 }
-                                if (chatClient.isConnected() && chatClient.sendMessage(message)) {
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            mPresenter.sendMessage(message);
-                                            mMessageEditText.setText("");
-                                        }
-                                    });
-                                } else {
-                                    showToast("Não foi possível enviar a mensagem");
-                                }
-                            } catch (IOException | InterruptedException | ExecutionException e) {
-                                progressDialog.hide();
-                                e.printStackTrace();
                             }
-                        }
-                    }).start();
-                } else {
-                    hideSoftKeyboard();
+                        }).start();
+                    } else {
+                        hideSoftKeyboard();
+                    }
+                } catch (CouldNotEncryptException e) {
+                    showToast("Não foi possível encriptar a mensagem");
                 }
             }
         });
@@ -252,7 +263,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
 
     public InetSocketAddress lookupUser() {
         try {
-            return (InetSocketAddress) DHT.get(friend.getId(), "chatAddress");
+            return (InetSocketAddress) DHT.getProtected("chatAddress", friend.getSignPublicKey());
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {

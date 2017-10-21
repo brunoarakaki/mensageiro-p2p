@@ -25,19 +25,18 @@ android {
 
     defaultConfig {
         applicationId "br.com.mobile2you.m2ybase"
-        minSdkVersion 16
+        minSdkVersion 23
         targetSdkVersion 25
         versionCode 1
         versionName "0.0.1"
+        multiDexEnabled true
     }
 
     buildTypes {
         release {
-            minifyEnabled true
             buildConfigField "boolean", "REPORT_CRASH", "true"
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             resValue "string", "app_name", "M2Y Base"
-
         }
         debug {
             debuggable true
@@ -94,20 +93,7 @@ dependencies {
     compile 'jp.wasabeef:glide-transformations:2.0.1'
     compile 'com.android.support.constraint:constraint-layout:+'
     testCompile 'junit:junit:4.12'
-    compile files('libs/gcm-server-1.0.2.jar')
-    compile files('libs/json-simple-1.1.jar')
-    compile files('libs/mapdb-1.0.6.jar')
-    compile files('libs/netty-buffer-4.0.28.Final.jar')
-    compile files('libs/netty-common-4.0.28.Final.jar')
-    compile files('libs/netty-transport-4.0.28.Final.jar')
-    compile files('libs/slf4j-api-1.7.5.jar')
-    compile files('libs/tomp2p-android-5.0-Beta8.jar')
-    compile files('libs/tomp2p-core-5.0-Beta8.jar')
-    compile files('libs/tomp2p-dht-5.0-Beta8.jar')
-    compile files('libs/tomp2p-nat-5.0-Beta8.jar')
-    compile files('libs/tomp2p-replication-5.0-Beta8.jar')
-    compile files('libs/tomp2p-storage-5.0-Beta8.jar')
-    compile files('libs/tomp2p-tracker-5.0-Beta8.jar')
-    compile files('libs/weupnp-0.1.2.jar')
     compile files('libs/dht.jar')
+    compile 'com.madgag.spongycastle:core:1.51.0.0'
+    compile 'com.madgag.spongycastle:pkix:1.51.0.0'
 }

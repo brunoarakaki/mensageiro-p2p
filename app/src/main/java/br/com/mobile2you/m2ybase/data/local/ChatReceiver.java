@@ -29,15 +29,17 @@ public class ChatReceiver implements Runnable {
 
             while(true) {
                 try {
-                    if (connection.isClosed()) {
+                    if (connection.isClosed() || !connection.isConnected()) {
                         break;
                     }
                     ObjectInputStream ois = new ObjectInputStream(connection.getInputStream());
-                    MessageResponse mes = (MessageResponse) ois.readObject();
+                    MessageResponse message = (MessageResponse) ois.readObject();
+                    byte[] decryptedText = Utils.decrypt(Utils.getPrivateKeyFromKeyStore(context, "RSA"), message.getEncodedText());
+                    message.setPlainText(new String(decryptedText));
                     MessageDatabaseHelper dbHelper = new MessageDatabaseHelper(context);
-                    dbHelper.add(mes);
+                    dbHelper.add(message);
                     Intent intent = new Intent(Constants.FILTER_CHAT_RECEIVER);
-                    intent.putExtra("message", mes);
+                    intent.putExtra("message", message);
                     LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
                     Thread.sleep(100);
                 } catch (EOFException e) {

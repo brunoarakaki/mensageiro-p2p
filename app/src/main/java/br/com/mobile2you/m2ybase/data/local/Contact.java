@@ -1,6 +1,7 @@
 package br.com.mobile2you.m2ybase.data.local;
 
 import java.io.Serializable;
+import java.security.PublicKey;
 
 /**
  * Created by Bruno on 14-Aug-17.
@@ -12,7 +13,8 @@ public class Contact implements Serializable {
     private String name;
     private String ip;
     private int port;
-    private String peerId;
+    private PublicKey signPublicKey;
+    private PublicKey chatPublicKey;
 
     public Contact(String id) {
         super();
@@ -45,20 +47,28 @@ public class Contact implements Serializable {
 
     public void setIp(String ip) { this.ip = ip; }
 
-    public String getPeerId() {
-        return peerId;
-    }
-
-    public void setPeerId(String peerId) {
-        this.peerId = peerId;
-    }
-
     public int getPort() {
         return port;
     }
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public PublicKey getSignPublicKey() {
+        return signPublicKey;
+    }
+
+    public void setSignPublicKey(PublicKey publicKey) {
+        this.signPublicKey = publicKey;
+    }
+
+    public PublicKey getChatPublicKey() {
+        return chatPublicKey;
+    }
+
+    public void setChatPublicKey(PublicKey chatPublicKey) {
+        this.chatPublicKey = chatPublicKey;
     }
 
 }

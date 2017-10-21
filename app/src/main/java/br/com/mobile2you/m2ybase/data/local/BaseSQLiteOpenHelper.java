@@ -21,7 +21,9 @@ public class BaseSQLiteOpenHelper extends SQLiteOpenHelper {
                 Constants.DB_CONTACT_FIELD_ID + " text primary key, " +
                 Constants.DB_CONTACT_FIELD_NAME + " text, " +
                 Constants.DB_CONTACT_FIELD_IP + " text, "+
-                Constants.DB_CONTACT_FIELD_PORT + " text)"
+                Constants.DB_CONTACT_FIELD_PORT + " text, "+
+                Constants.DB_CONTACT_FIELD_SIGN_ENCODED_KEY + " blob, "+
+                Constants.DB_CONTACT_FIELD_CHAT_ENCODED_KEY + " blob)"
         );
         db.execSQL("create table " + Constants.DB_MESSAGES_TABLE + " (" +
                 Constants.DB_MESSAGES_FIELD_MESSAGE_ID + " integer primary key autoincrement, " +
