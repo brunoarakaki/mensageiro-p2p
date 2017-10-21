@@ -4,9 +4,19 @@
 
 
     <string name="menu_add_contact">Adicionar Contato</string>
+    <string name="menu_edit_info">Editar Nome</string>
+    <string name="menu_view_dht">Ver rede DHT</string>
+    <string name="menu_reconnect">Reconectar à rede</string>
+    <string name="menu_direct_connection">Conexão direta</string>
+
+    <string name="contact_name">Nome do Contato</string>
+    <string name="contact_ip_address">Endereço IP</string>
+    <string name="contact_port">Porta</string>
 
     <!--DIALOG MESSAGES-->
     <string name="progress_dialog_standard_msg">Aguarde um momento.</string>
+    <string name="connection_failed_dialog_tittle">Erro na conexão</string>
+    <string name="connection_failed_dialog_msg">Não foi possível se conectar com esse endereço</string>
 
     <!--NETWORK ERRORS-->
     <string name="network_error_timeout">Erro inesperado, por favor tente novamente.</string>
