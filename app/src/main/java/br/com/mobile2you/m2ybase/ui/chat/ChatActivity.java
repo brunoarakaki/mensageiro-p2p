@@ -1,11 +1,13 @@
 package br.com.mobile2you.m2ybase.ui.chat;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -31,6 +33,7 @@ import br.com.mobile2you.m2ybase.data.local.ProgressDialogHelper;
 import br.com.mobile2you.m2ybase.data.local.Utils;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
+import br.com.mobile2you.m2ybase.utils.helpers.DialogHelper;
 import br.com.mobile2you.m2ybase.utils.exceptions.CouldNotEncryptException;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -42,6 +45,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     private ChatClient chatClient;
     private Contact me;
     private Contact friend;
+    private boolean isDirectConnection;
     private messagesUpdateBroadcastReceiver messageBroadcast;
     private ProgressDialogHelper progressDialog;
 
@@ -65,6 +69,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
 
         me = (Contact) extras.getSerializable(Constants.EXTRA_MYSELF);
         friend = (Contact) extras.getSerializable(Constants.EXTRA_CONTACT);
+        isDirectConnection = extras.getBoolean(Constants.EXTRA_DIRECT_CONNECTION);
 
         chatClient = new ChatClient();
 
@@ -72,14 +77,23 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
             @Override
             public void run() {
                 progressDialog.show("Conectando...");
-                try {
-                    if (!connectToClient(friend.getIp(), friend.getPort())) {
+                if (!connectToClient(friend.getIp(), friend.getPort())) {
+                    if(isDirectConnection){
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                showConnectionFailDialog();
+                            }
+                        });
+                    } else {
                         friend.setIp(null);
                         friend.setPort(0);
-                        lookupAndConnect();
+                        try {
+                            lookupAndConnect();
+                        } catch (IOException | InterruptedException | ExecutionException  e) {
+                             e.printStackTrace();
+                        }
                     }
-                } catch (IOException | InterruptedException | ExecutionException  e) {
-                    e.printStackTrace();
                 }
                 progressDialog.hide();
                 updateActionBar();
@@ -168,6 +182,18 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
             }
         });
         mRecyclerView.setAdapter(mAdapter);
+    }
+
+    public void showConnectionFailDialog(){
+        AlertDialog alertDialog = DialogHelper.createDisclaimerDialog(this, getString(R.string.connection_failed_dialog_tittle),
+                getString(R.string.connection_failed_dialog_msg),
+                "Voltar", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                });
+        alertDialog.show();
     }
 
     @Override

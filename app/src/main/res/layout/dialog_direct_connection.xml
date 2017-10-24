@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/layout_root"
+              android:layout_width="fill_parent"
+              android:layout_height="200dp"
+              android:orientation="vertical"
+              android:padding="10dp" >
+
+    <!--<TextView-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="@string/contact_name" />-->
+
+    <!--<EditText-->
+        <!--android:id="@+id/edit_text_contact_name"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:inputType="textCapSentences"-->
+        <!--&gt;-->
+        <!--<requestFocus />-->
+    <!--</EditText>-->
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/contact_ip_address" />
+
+    <EditText
+        android:id="@+id/edit_text_contact_ip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="phone"
+        >
+        <requestFocus />
+    </EditText>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/contact_port" />
+
+    <EditText
+        android:id="@+id/edit_text_contact_port"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        >
+    </EditText>
+
+</LinearLayout>

@@ -40,13 +40,20 @@ public class ProgressDialogHelper {
 
     public void show(final String text, int timeout, final Runnable timeoutRunnable) {
         this.show(text);
-        mTimeoutTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                hide();
-                timeoutRunnable.run();
-            }
-        }, timeout);
+        try {
+            mTimeoutTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    hide();
+                    timeoutRunnable.run();
+                }
+            }, timeout);
+        }
+        catch (IllegalStateException e){
+            hide();
+            e.printStackTrace();
+        }
+
     }
 
     public void hide() {
