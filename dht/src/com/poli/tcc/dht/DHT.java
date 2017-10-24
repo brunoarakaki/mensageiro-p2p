@@ -81,6 +81,7 @@ public class DHT {
 				// TODO Auto-generated method stub
 				if (verified) {
 					System.out.println("[DHT] Peer found: " + peer);
+					System.out.println("[DHT] Bootstrap bean: " + serverPeer.peer().distributedRouting().peerMap().all());
 					System.out.println("[DHT] Peer bean: " + serverPeer.peerBean().peerMap().all());
 				}
 			}
@@ -89,6 +90,7 @@ public class DHT {
 			public void peerRemoved(PeerAddress peer, PeerStatistic statistic) {
 				// TODO Auto-generated method stub
 				System.out.println("[DHT] Peer disconnected: " + peer);
+				System.out.println("[DHT] Bootstrap bean: " + serverPeer.peer().distributedRouting().peerMap().all());
 				System.out.println("[DHT] Peer bean: " + serverPeer.peerBean().peerMap().all());
 			}
 
@@ -130,6 +132,7 @@ public class DHT {
         fd.awaitUninterruptibly();
         if (fd.isSuccess()) { 
         	System.out.println("[DHT] We are not behind a NAT and reachable to other peers. Outside address: " + fd.peerAddress());
+        	System.out.println("[DHT] Bootstrap bean: " + serverPeer.peer().distributedRouting().peerMap().all());
         	System.out.println("[DHT] Peer bean: " + serverPeer.peerBean().peerMap().all());
         	return true;
         } else {
@@ -145,6 +148,7 @@ public class DHT {
         {
             // Port forwarding has succeed
             System.out.println("[DHT] Port forwarding was successful. My address visible to the outside is " + fnat.peerAddress());
+            System.out.println("[DHT] Bootstrap bean: " + serverPeer.peer().distributedRouting().peerMap().all());
             System.out.println("[DHT] Peer bean: " + serverPeer.peerBean().peerMap().all());
             return true;
         } else {
@@ -163,6 +167,7 @@ public class DHT {
         if (futureBootstrap.isSuccess())
         {
             System.out.println("[DHT] Bootstrap was successful. bootstrapTo  = " + futureBootstrap.bootstrapTo());
+            System.out.println("[DHT] Bootstrap bean: " + serverPeer.peer().distributedRouting().peerMap().all());
             System.out.println("[DHT] Peer bean: " + serverPeer.peerBean().peerMap().all());
             return true;
         } else {
