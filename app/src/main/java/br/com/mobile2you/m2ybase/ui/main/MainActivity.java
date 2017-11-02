@@ -291,18 +291,23 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
         alertDialogBuilder.setView(dialogView);
 
-        final EditText userInput = (EditText) dialogView
+        final EditText editTextUserName = (EditText) dialogView
                 .findViewById(R.id.edit_text_user_name);
+        final EditText editTextPassword = (EditText) dialogView
+                .findViewById(R.id.edit_text_user_password);
 
         // set dialog message
         alertDialogBuilder
                 .setCancelable(false)
                 .setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog,int id) {
-                        String userName = userInput.getText().toString();
+                        String userName = editTextUserName.getText().toString();
                         PreferencesHelper.getInstance().putUserId(userName);
+                        String userPassword = editTextPassword.getText().toString();
+                        PreferencesHelper.getInstance().putUserPassword(userPassword);
                         mUserId = userName;
                         initialize();
+                        showToast(PreferencesHelper.getInstance().getUserPassword());
                     }
                 });
         return alertDialogBuilder;

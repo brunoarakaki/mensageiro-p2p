@@ -19,6 +19,7 @@ public class PreferencesHelper {
 
     public static final String PREF_SESSION_COOKIE = SHARED_PREFERENCES_NAME + ".PREF_SESSION_COOKIE";
     public static final String PREF_USER_ID = SHARED_PREFERENCES_NAME + ".PREF_USER_ID";
+    public static final String PREF_USER_PASSWORD = SHARED_PREFERENCES_NAME + ".PREF_USER_PASSWORD";
 
     public static final String PREF_PRIVATE_KEY = SHARED_PREFERENCES_NAME + ".PREF_PRIVATE_KEY";
     public static final String PREF_PUBLIC_KEY = SHARED_PREFERENCES_NAME + ".PREF_PUBLIC_KEY";
@@ -74,6 +75,16 @@ public class PreferencesHelper {
     public String getUserId(){
         return mSharedPreferences.getString(PREF_USER_ID, "");
     }
+
+
+    public void putUserPassword(String password){
+        mSharedPreferences.edit().putString(PREF_USER_PASSWORD, password).apply();
+    }
+
+    public String getUserPassword(){
+        return mSharedPreferences.getString(PREF_USER_PASSWORD, "");
+    }
+
 
     public boolean isLogged(){
         return !getSessionCookie().isEmpty();
