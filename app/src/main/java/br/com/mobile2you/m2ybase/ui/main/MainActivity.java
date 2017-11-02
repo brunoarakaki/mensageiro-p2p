@@ -307,7 +307,6 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                         PreferencesHelper.getInstance().putUserPassword(userPassword);
                         mUserId = userName;
                         initialize();
-                        showToast(PreferencesHelper.getInstance().getUserPassword());
                     }
                 });
         return alertDialogBuilder;

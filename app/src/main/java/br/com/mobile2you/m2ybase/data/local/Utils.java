@@ -45,6 +45,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import br.com.mobile2you.m2ybase.Constants;
+import br.com.mobile2you.m2ybase.utils.StringUtil;
 
 public class Utils {
 
@@ -107,7 +108,7 @@ public class Utils {
             }
             KeyStore ks = KeyStore.getInstance("BKS", "SC");
             ks.load(inputStream, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
-            KeyStore.ProtectionParameter protectionParameter = new KeyStore.PasswordProtection(DEFAULT_ENTRY_PASSWORD.toCharArray());
+            KeyStore.ProtectionParameter protectionParameter = new KeyStore.PasswordProtection(getUserPassword().toCharArray());
             KeyStore.Entry entry = ks.getEntry(Constants.PGP_KEY_ALIAS + "_" + type, protectionParameter);
             if (inputStream != null) {
                 inputStream.close();
@@ -147,7 +148,7 @@ public class Utils {
             KeyPair keyPair = kpg.generateKeyPair();
             X509Certificate cert = generateCertificate(type, keyPair);
 
-            KeyStore.ProtectionParameter protectionParameter = new KeyStore.PasswordProtection(DEFAULT_ENTRY_PASSWORD.toCharArray());
+            KeyStore.ProtectionParameter protectionParameter = new KeyStore.PasswordProtection(getUserPassword().toCharArray());
             KeyStore.PrivateKeyEntry entry = new KeyStore.PrivateKeyEntry(keyPair.getPrivate(), new X509Certificate[] {cert});
             ks.setEntry(Constants.PGP_KEY_ALIAS + "_" + type, entry, protectionParameter);
             FileOutputStream outputStream;
@@ -213,6 +214,11 @@ public class Utils {
     static PrivateKey getPrivateKeyFromKeyStore(Context context, String type) {
         KeyPair keyPair = getKeyPairFromKeyStore(context, type);
         return keyPair.getPrivate();
+    }
+
+    public static String getUserPassword() {
+        String userPassword = PreferencesHelper.getInstance().getUserPassword();
+        return StringUtil.isBlank(userPassword) ? DEFAULT_ENTRY_PASSWORD : userPassword;
     }
 
 }
