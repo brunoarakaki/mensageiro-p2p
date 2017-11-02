@@ -1,11 +1,7 @@
 package br.com.mobile2you.m2ybase.ui.main;
 
 import android.content.Context;
-
-import java.security.PublicKey;
 import java.util.List;
-import java.util.Random;
-
 import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.local.ContactDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.local.MessageDatabaseHelper;
@@ -87,12 +83,12 @@ public class MainPresenter extends BasePresenter<MainMvpView> {
         mMainMvpView.showContacts(mCachedContacts);
     }
 
-    public void addContact(Context context, String username, String ip, int port, PublicKey signPublicKey, PublicKey chatPublicKey){
+    public void addContact(Context context, String username, String ip, int port, byte[] signPublicKeyEncoded, byte[] chatPublicKeyRingEncoded){
         Contact contact = new Contact(username);
         contact.setIp(ip);
         contact.setPort(port);
-        contact.setSignPublicKey(signPublicKey);
-        contact.setChatPublicKey(chatPublicKey);
+        contact.setSignPublicKeyEncoded(signPublicKeyEncoded);
+        contact.setChatPublicKeyRingEncoded(chatPublicKeyRingEncoded);
         addContact(context, contact);
 
     }

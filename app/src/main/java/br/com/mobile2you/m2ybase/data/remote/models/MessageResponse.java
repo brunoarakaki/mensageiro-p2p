@@ -10,7 +10,7 @@ import br.com.mobile2you.m2ybase.data.local.Contact;
  * Created by Bruno on 12-Aug-17.
  */
 
-public class MessageResponse implements Serializable {
+public class MessageResponse extends BaseResponse implements Serializable {
 
     private Contact sender;
     private Contact receiver;

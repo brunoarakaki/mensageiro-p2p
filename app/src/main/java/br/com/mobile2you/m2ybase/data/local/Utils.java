@@ -5,11 +5,9 @@ package br.com.mobile2you.m2ybase.data.local;
  */
 
 import android.content.Context;
-
 import org.spongycastle.jce.X509Principal;
 import org.spongycastle.jce.provider.BouncyCastleProvider;
 import org.spongycastle.x509.X509V3CertificateGenerator;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -38,6 +36,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.crypto.BadPaddingException;
@@ -106,7 +105,7 @@ public class Utils {
             } catch (FileNotFoundException e) {
                 System.out.println("Keystore file not found. A new one will be created...");
             }
-            KeyStore ks = KeyStore.getInstance("BKS", "BC");
+            KeyStore ks = KeyStore.getInstance("BKS", "SC");
             ks.load(inputStream, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
             KeyStore.ProtectionParameter protectionParameter = new KeyStore.PasswordProtection(DEFAULT_ENTRY_PASSWORD.toCharArray());
             KeyStore.Entry entry = ks.getEntry(Constants.PGP_KEY_ALIAS + "_" + type, protectionParameter);
@@ -121,6 +120,8 @@ public class Utils {
             return new KeyPair(publicKey, privateKey);
         } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException | UnrecoverableEntryException | NoSuchProviderException | IOException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return null;
     }
@@ -133,13 +134,13 @@ public class Utils {
             } catch (FileNotFoundException e) {
                 System.out.println("Keystore file not found. A new one will be created...");
             }
-            KeyStore ks = KeyStore.getInstance("BKS", "BC");
+            KeyStore ks = KeyStore.getInstance("BKS", "SC");
             ks.load(inputStream, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
             if (inputStream!= null) {
                 inputStream.close();
             }
 
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance(type, "BC");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(type, "SC");
             SecureRandom secRandom = SecureRandom.getInstance("SHA1PRNG");
             kpg.initialize(1024, secRandom);
 
@@ -176,10 +177,10 @@ public class Utils {
         return v3CertGen.generateX509Certificate(keyPair.getPrivate());
     }
 
-    static PublicKey getPublicKeyFromEncoded(String type, byte[] encoded) {
+    public static PublicKey getPublicKeyFromEncoded(String type, byte[] encoded) {
         try {
             X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(encoded);
-            KeyFactory keyFactory = KeyFactory.getInstance(type, "BC");
+            KeyFactory keyFactory = KeyFactory.getInstance(type, "SC");
             return keyFactory.generatePublic(pubKeySpec);
         } catch (NoSuchProviderException | InvalidKeySpecException | NoSuchAlgorithmException e) {
             e.printStackTrace();

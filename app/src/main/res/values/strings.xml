@@ -9,6 +9,8 @@
     <string name="menu_reconnect">Reconectar à rede</string>
     <string name="menu_direct_connection">Conexão direta</string>
 
+    <string name="menu_sign_key">Assinar certificado</string>
+
     <string name="contact_name">Nome do Contato</string>
     <string name="contact_ip_address">Endereço IP</string>
     <string name="contact_port">Porta</string>
@@ -32,6 +34,9 @@
     <string name="apptextinputlayout_invalid_field">Campo %s inválido.</string>
     <string name="apptextinputlayout_empty_field">Campo %s não pode estar vazio.</string>
     <string name="apptextinputlaoyut_password_field">A %1$s não pode conter menos de %2$d caracteres.</string>
+
+    <string name="contact_trust_title">Os seguintes contatos confiam em %s</string>
+    <string name="contact_trust_check">Eu confio em %s. </string>
 
 
 </resources>

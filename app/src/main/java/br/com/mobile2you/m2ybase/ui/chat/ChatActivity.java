@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
@@ -15,11 +16,20 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.poli.tcc.dht.DHT;
 
+import org.spongycastle.openpgp.PGPException;
+import org.spongycastle.openpgp.PGPPublicKey;
+import org.spongycastle.openpgp.PGPPublicKeyRing;
+import org.spongycastle.openpgp.PGPSignature;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.security.NoSuchProviderException;
+import java.security.PublicKey;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -29,10 +39,16 @@ import br.com.mobile2you.m2ybase.data.local.ChatClient;
 import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.local.ContactDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.local.MessageDatabaseHelper;
+import br.com.mobile2you.m2ybase.data.local.PGPManagerSingleton;
+import br.com.mobile2you.m2ybase.data.local.PGPUtils;
 import br.com.mobile2you.m2ybase.data.local.ProgressDialogHelper;
 import br.com.mobile2you.m2ybase.data.local.Utils;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
+import br.com.mobile2you.m2ybase.data.remote.models.SignatureResponse;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
+import br.com.mobile2you.m2ybase.ui.common.TrustDialogFragment;
+import br.com.mobile2you.m2ybase.ui.main.MainActivity;
+import br.com.mobile2you.m2ybase.utils.exceptions.ContactNotFoundException;
 import br.com.mobile2you.m2ybase.utils.helpers.DialogHelper;
 import br.com.mobile2you.m2ybase.utils.exceptions.CouldNotEncryptException;
 import butterknife.BindView;
@@ -48,6 +64,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     private boolean isDirectConnection;
     private messagesUpdateBroadcastReceiver messageBroadcast;
     private ProgressDialogHelper progressDialog;
+    private SignatureUpdateBroadcast signatureUpdateBroadcast;
 
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
@@ -71,12 +88,16 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         friend = (Contact) extras.getSerializable(Constants.EXTRA_CONTACT);
         isDirectConnection = extras.getBoolean(Constants.EXTRA_DIRECT_CONNECTION);
 
+        signatureUpdateBroadcast = new SignatureUpdateBroadcast();
+        LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(signatureUpdateBroadcast, new IntentFilter(Constants.FILTER_SIGNATURE_UPDATE));
+
         chatClient = new ChatClient();
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 progressDialog.show("Conectando...");
+                friend.updateChatPublicKey(getApplicationContext());
                 if (!connectToClient(friend.getIp(), friend.getPort())) {
                     if(isDirectConnection){
                         runOnUiThread(new Runnable() {
@@ -106,7 +127,9 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
             public void onClick(View v) {
                 try {
                     final String text = mMessageEditText.getText().toString();
-                    byte[] encryptedText = Utils.encrypt(friend.getChatPublicKey(), text);
+                    PGPPublicKeyRing chatPublicKeyRing = PGPUtils.readPublicKeyRingFromStream(new ByteArrayInputStream(friend.getChatPublicKeyRingEncoded()));
+                    PGPPublicKey chatPublicKey = PGPUtils.getEncryptionKeyFromKeyRing(chatPublicKeyRing);
+                    byte[] encryptedText = PGPManagerSingleton.getInstance().encrypt(text.getBytes(), chatPublicKey);
                     if (encryptedText == null) {
                         throw new CouldNotEncryptException();
                     }
@@ -146,6 +169,9 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
                     }
                 } catch (CouldNotEncryptException e) {
                     showToast("Não foi possível encriptar a mensagem");
+                } catch (IOException | NoSuchProviderException | PGPException e) {
+                    showToast(e.getMessage());
+                    e.printStackTrace();
                 }
             }
         });
@@ -156,6 +182,27 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         IntentFilter intentFilterMessage = new IntentFilter(Constants.FILTER_CHAT_RECEIVER);
         messageBroadcast = new messagesUpdateBroadcastReceiver();
         LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(messageBroadcast, intentFilterMessage );
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_chat, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.action_sign_key:
+                //signKey();
+                FragmentManager fm = getSupportFragmentManager();
+                TrustDialogFragment trustDialogFragment = TrustDialogFragment.newInstance(this.getApplicationContext(), friend);
+                trustDialogFragment.show(fm, "dialog_contact_trust");
+                break;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     private void updateActionBar() {
@@ -222,6 +269,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         try {
             mPresenter.detachView();
             LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(messageBroadcast);
+            LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(signatureUpdateBroadcast);
             chatClient.shutdown();
         } catch (IOException e) {
             e.printStackTrace();
@@ -263,7 +311,8 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
 
     public InetSocketAddress lookupUser() {
         try {
-            return (InetSocketAddress) DHT.getProtected("chatAddress", friend.getSignPublicKey());
+            PublicKey signPublicKey = Utils.getPublicKeyFromEncoded("DSA", friend.getSignPublicKeyEncoded());
+            return (InetSocketAddress) DHT.getProtected("chatAddress", signPublicKey);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -286,10 +335,45 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
             int port = address.getPort();
             friend.setIp(ip);
             friend.setPort(port);
-            ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(this);
-            dbHelper.update(friend);
+            friend.save(this);
             Log.d("Chat", "Found that user address is " + ip + ":" + port);
             connectToClient(ip, port);
+        }
+    }
+
+    private void updateSignature(boolean trust) {
+        try {
+            PGPPublicKeyRing chatPublicKeyRing = PGPUtils.readPublicKeyRingFromStream(new ByteArrayInputStream(friend.getChatPublicKeyRingEncoded()));
+            PGPSignature signature = PGPManagerSingleton.getInstance().generateSignatureForPublicKey(me.getId(), chatPublicKeyRing.getPublicKey(), "12345".toCharArray());
+            final SignatureResponse message = new SignatureResponse(me.getId(), signature, trust);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (chatClient.isConnected() && chatClient.sendMessage(message)) {
+                        showToast("Assinatura atualizada");
+                        try {
+                            Thread.sleep(3000);
+                            friend.updateChatPublicKey(getApplicationContext());
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                }
+            }).start();
+        } catch (PGPException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private class SignatureUpdateBroadcast extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Boolean trust = intent.getBooleanExtra("trust", false);
+            updateSignature(trust);
         }
     }
 

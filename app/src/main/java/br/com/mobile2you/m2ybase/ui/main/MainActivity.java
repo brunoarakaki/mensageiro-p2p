@@ -37,6 +37,9 @@ import br.com.mobile2you.m2ybase.data.local.ChatServer;
 import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.local.ContactDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.local.NodeDiscovery;
+import br.com.mobile2you.m2ybase.data.local.PGPManager;
+import br.com.mobile2you.m2ybase.data.local.PGPManagerSingleton;
+import br.com.mobile2you.m2ybase.data.local.PGPUtils;
 import br.com.mobile2you.m2ybase.data.local.PreferencesHelper;
 import br.com.mobile2you.m2ybase.data.local.ProgressDialogHelper;
 import br.com.mobile2you.m2ybase.data.local.Utils;
@@ -124,6 +127,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         } else if (!mInitialized){
             initialize();
         }
+
     }
 
     public void initialize() {
@@ -135,6 +139,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         });
         me = new Contact(mUserId);
         nodeDiscovery = new NodeDiscovery(getApplicationContext(), mDHTPort);
+        buildPGPManager();
         connectToDHT();
         startChatServer(mChatPort);
         mMainPresenter.loadContacts(this);
@@ -367,8 +372,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                         throw new ContactNotFoundException();
                     }
                     final InetSocketAddress address = (InetSocketAddress) DHT.getProtected("chatAddress", signPublicKey);
-                    final PublicKey chatPublicKey = (PublicKey) DHT.getProtected("chatPublicKey", signPublicKey);
-                    if (address == null || chatPublicKey == null) {
+                    final byte[] chatPublicKeyRingEncoded = (byte[]) DHT.getProtected("chatPublicKey", signPublicKey);
+                    if (address == null || chatPublicKeyRingEncoded == null) {
                         throw new ContactNotFoundException();
                     }
                     final String ip = address.getHostName();
@@ -376,7 +381,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            mMainPresenter.addContact(getApplicationContext(), username, ip, port, signPublicKey, chatPublicKey);
+                            mMainPresenter.addContact(getApplicationContext(), username, ip, port, signPublicKey.getEncoded(), chatPublicKeyRingEncoded);
                         }
                     });
                     progressDialog.hide();
@@ -415,6 +420,15 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         startChat(contact, true);
     }
 
+    private void buildPGPManager() {
+        try {
+            PGPManagerSingleton.initialize(new PGPManager(this.getApplicationContext(), PreferencesHelper.getInstance().getUserId(), "12345".toCharArray()));
+            PGPUtils.printSignaturesFromKey(PGPManagerSingleton.getInstance().getPublicKey());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void connectToDHT() {
         new Thread(new Runnable() {
             @Override
@@ -424,8 +438,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                     Number160 peerId = DHT.createPeerID(mUserId);
                     DHTNode thisNode = new DHTNode(peerId);
                     KeyPair signKeyPair = Utils.getKeyPairFromKeyStore(getApplicationContext(), "DSA");
-                    KeyPair chatKeyPair = Utils.getKeyPairFromKeyStore(getApplicationContext(), "RSA");
-                    if (signKeyPair == null || chatKeyPair == null) {
+//                    KeyPair chatKeyPair = Utils.getKeyPairFromKeyStore(getApplicationContext(), "RSA");
+                    if (signKeyPair == null) {
                         throw new KeyPairNullException();
                     }
                     thisNode.setUsername(mUserId);
@@ -434,8 +448,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                     thisNode.setSignKeyPair(signKeyPair);
                     me.setIp(Utils.getIPAddress(true));
                     me.setPort(mChatPort);
-                    me.setSignPublicKey(signKeyPair.getPublic());
-                    me.setChatPublicKey(chatKeyPair.getPublic());
+                    me.setSignPublicKeyEncoded(signKeyPair.getPublic().getEncoded());
+                    me.setChatPublicKeyRingEncoded(PGPManagerSingleton.getInstance().getPublicKeyRing().getEncoded());
                     DHT.start(thisNode, mDHTPort);
                     if (DHT.connectTo(trackerAddress, trackerPort)) {
                         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(new Intent(Constants.FILTER_DHT_CONNECTION));
@@ -566,7 +580,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                     showMessage("Chat address update failed!");
                 }
                 Log.i("DHT", "[DHT] Broadcasting my public chat key");
-                fput = DHT.putProtected("chatPublicKey", me.getChatPublicKey());
+                fput = DHT.putProtected("chatPublicKey", PGPManagerSingleton.getInstance().getPublicKeyRing().getEncoded());
                 if (fput.isFailed()) {
                     Log.i("DHT", "[DHT] Chat public key update failed: " + fput.failedReason());
                     showMessage("Chat public key update failed!");

@@ -11,7 +11,10 @@ import java.io.ObjectOutputStream;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+
+import br.com.mobile2you.m2ybase.data.remote.models.BaseResponse;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
+import br.com.mobile2you.m2ybase.data.remote.models.SignatureResponse;
 
 public class ChatClient {
 
@@ -45,7 +48,7 @@ public class ChatClient {
         return false;
     }
 
-    public Boolean sendMessage(MessageResponse message) {
+    public Boolean sendMessage(BaseResponse message) {
         try {
             if (!this.isConnected()) {
                 connect(this.ip, this.port);
@@ -53,7 +56,6 @@ public class ChatClient {
             if (this.isConnected()) {
                 ObjectOutputStream oos = new ObjectOutputStream(this.client.getOutputStream());
                 oos.writeObject(message);
-                Log.d("Chat", "Message sent: " + message.getPlainText());
                 return true;
             }
         } catch (IOException e) {

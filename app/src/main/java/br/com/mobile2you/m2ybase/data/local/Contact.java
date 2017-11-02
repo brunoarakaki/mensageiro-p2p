@@ -1,5 +1,10 @@
 package br.com.mobile2you.m2ybase.data.local;
 
+import android.content.Context;
+
+import com.poli.tcc.dht.DHT;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.security.PublicKey;
 
@@ -13,8 +18,8 @@ public class Contact implements Serializable {
     private String name;
     private String ip;
     private int port;
-    private PublicKey signPublicKey;
-    private PublicKey chatPublicKey;
+    private byte[] signPublicKeyEncoded;
+    private byte[] chatPublicKeyRingEncoded;
 
     public Contact(String id) {
         super();
@@ -55,20 +60,37 @@ public class Contact implements Serializable {
         this.port = port;
     }
 
-    public PublicKey getSignPublicKey() {
-        return signPublicKey;
+    public byte[] getSignPublicKeyEncoded() {
+        return signPublicKeyEncoded;
     }
 
-    public void setSignPublicKey(PublicKey publicKey) {
-        this.signPublicKey = publicKey;
+    public void setSignPublicKeyEncoded(byte[] signPublicKeyEncoded) {
+        this.signPublicKeyEncoded = signPublicKeyEncoded;
     }
 
-    public PublicKey getChatPublicKey() {
-        return chatPublicKey;
+    public byte[] getChatPublicKeyRingEncoded() {
+        return chatPublicKeyRingEncoded;
     }
 
-    public void setChatPublicKey(PublicKey chatPublicKey) {
-        this.chatPublicKey = chatPublicKey;
+    public void setChatPublicKeyRingEncoded(byte[] chatPublicKeyRingEncoded) {
+        this.chatPublicKeyRingEncoded = chatPublicKeyRingEncoded;
+    }
+
+    public void save(Context context) {
+        ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
+        dbHelper.update(this);
+    }
+
+    public void updateChatPublicKey(Context context) {
+        try {
+            final PublicKey signPublicKey = (PublicKey) DHT.get(this.getId());
+            final byte[] chatPublicKeyRingEncoded = (byte[]) DHT.getProtected("chatPublicKey", signPublicKey);
+            this.setChatPublicKeyRingEncoded(chatPublicKeyRingEncoded);
+            this.save(context);
+
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
 }

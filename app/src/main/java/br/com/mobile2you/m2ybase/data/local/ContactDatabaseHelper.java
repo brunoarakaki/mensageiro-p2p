@@ -5,8 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-
-import java.security.PublicKey;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,24 +41,33 @@ public class ContactDatabaseHelper {
 
 
     public long add(Contact contact) {
-        SQLiteDatabase db = _openHelper.getWritableDatabase();
-        if (db == null) {
+        try {
+            SQLiteDatabase db = _openHelper.getWritableDatabase();
+            if (db == null) {
+                return 0;
+            }
+            ContentValues row = convertContactToContentValues(contact);
+            long id = db.insert(Constants.DB_CONTACTS_TABLE, null, row);
+            db.close();
+            return id;
+        } catch (IOException e) {
+            e.printStackTrace();
             return 0;
         }
-        ContentValues row = convertContactToContentValues(contact);
-        long id = db.insert(Constants.DB_CONTACTS_TABLE, null, row);
-        db.close();
-        return id;
     }
 
     public void update(Contact contact) {
-        SQLiteDatabase db = _openHelper.getWritableDatabase();
-        if (db == null) {
-            return;
+        try {
+            SQLiteDatabase db = _openHelper.getWritableDatabase();
+            if (db == null) {
+                return;
+            }
+            ContentValues row = convertContactToContentValues(contact);
+            db.update(Constants.DB_CONTACTS_TABLE, row, "_id = ?", new String[]{contact.getId()});
+            db.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        ContentValues row = convertContactToContentValues(contact);
-        db.update(Constants.DB_CONTACTS_TABLE, row, "_id = ?", new String[] { contact.getId() });
-        db.close();
     }
 
 
@@ -90,14 +98,14 @@ public class ContactDatabaseHelper {
         return convertCursorToContacts(cursor);
     }
 
-    private ContentValues convertContactToContentValues(Contact contact){
+    private ContentValues convertContactToContentValues(Contact contact) throws IOException {
         ContentValues contentValues = new ContentValues();
         contentValues.put(Constants.DB_CONTACT_FIELD_ID, contact.getId());
         contentValues.put(Constants.DB_CONTACT_FIELD_NAME, contact.getName());
         contentValues.put(Constants.DB_CONTACT_FIELD_IP, contact.getIp());
         contentValues.put(Constants.DB_CONTACT_FIELD_PORT, contact.getPort());
-        contentValues.put(Constants.DB_CONTACT_FIELD_SIGN_ENCODED_KEY, contact.getSignPublicKey().getEncoded());
-        contentValues.put(Constants.DB_CONTACT_FIELD_CHAT_ENCODED_KEY, contact.getChatPublicKey().getEncoded());
+        contentValues.put(Constants.DB_CONTACT_FIELD_SIGN_ENCODED_KEY, contact.getSignPublicKeyEncoded());
+        contentValues.put(Constants.DB_CONTACT_FIELD_CHAT_ENCODED_KEY, contact.getChatPublicKeyRingEncoded());
         return contentValues;
     }
 
@@ -108,13 +116,11 @@ public class ContactDatabaseHelper {
             String name = cursor.getString(1);
             String ip = cursor.getString(2);
             int port = cursor.getInt(3);
-            PublicKey signPublicKey = Utils.getPublicKeyFromEncoded("DSA", cursor.getBlob(4));
-            PublicKey chatPublicKey = Utils.getPublicKeyFromEncoded("RSA", cursor.getBlob(5));
             Contact contact = new Contact(id, name);
             contact.setIp(ip);
             contact.setPort(port);
-            contact.setSignPublicKey(signPublicKey);
-            contact.setChatPublicKey(chatPublicKey);
+            contact.setSignPublicKeyEncoded(cursor.getBlob(4));
+            contact.setChatPublicKeyRingEncoded(cursor.getBlob(5));
             contacts.add(contact);
         }
         return contacts;
