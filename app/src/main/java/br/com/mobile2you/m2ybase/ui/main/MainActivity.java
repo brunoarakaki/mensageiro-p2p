@@ -46,6 +46,7 @@ import br.com.mobile2you.m2ybase.data.local.Utils;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
 import br.com.mobile2you.m2ybase.ui.chat.ChatActivity;
+import br.com.mobile2you.m2ybase.ui.dht_visualization.DhtVisualizationActivity;
 import br.com.mobile2you.m2ybase.utils.exceptions.*;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -151,6 +152,11 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         intent.putExtra(Constants.EXTRA_MYSELF, me);
         intent.putExtra(Constants.EXTRA_CONTACT, contact);
         intent.putExtra(Constants.EXTRA_DIRECT_CONNECTION, directConnection);
+        startActivity(intent);
+    }
+
+    public void startDhtVisualization() {
+        Intent intent = new Intent(MainActivity.this, DhtVisualizationActivity.class);
         startActivity(intent);
     }
 
@@ -494,6 +500,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                 showEditUserNameDialog();
                 break;
             case R.id.action_view_dht:
+                startDhtVisualization();
                 break;
             case R.id.action_reconnect:
                 ProgressDialogHelper pd = new ProgressDialogHelper(this);
