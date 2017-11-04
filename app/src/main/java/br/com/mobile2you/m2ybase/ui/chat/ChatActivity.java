@@ -41,6 +41,7 @@ import br.com.mobile2you.m2ybase.data.local.ContactDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.local.MessageDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.local.PGPManagerSingleton;
 import br.com.mobile2you.m2ybase.data.local.PGPUtils;
+import br.com.mobile2you.m2ybase.data.local.PreferencesHelper;
 import br.com.mobile2you.m2ybase.data.local.ProgressDialogHelper;
 import br.com.mobile2you.m2ybase.data.local.Utils;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
@@ -343,8 +344,9 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
 
     private void updateSignature(boolean trust) {
         try {
+            String userPassword = PreferencesHelper.getInstance().getUserPassword();
             PGPPublicKeyRing chatPublicKeyRing = PGPUtils.readPublicKeyRingFromStream(new ByteArrayInputStream(friend.getChatPublicKeyRingEncoded()));
-            PGPSignature signature = PGPManagerSingleton.getInstance().generateSignatureForPublicKey(me.getId(), chatPublicKeyRing.getPublicKey(), "12345".toCharArray());
+            PGPSignature signature = PGPManagerSingleton.getInstance().generateSignatureForPublicKey(me.getId(), chatPublicKeyRing.getPublicKey(), userPassword.toCharArray());
             final SignatureResponse message = new SignatureResponse(me.getId(), signature, trust);
             new Thread(new Runnable() {
                 @Override

@@ -432,7 +432,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
     private void buildPGPManager() {
         try {
-            PGPManagerSingleton.initialize(new PGPManager(this.getApplicationContext(), PreferencesHelper.getInstance().getUserId(), "12345".toCharArray()));
+            String userPassword = PreferencesHelper.getInstance().getUserPassword();
+            PGPManagerSingleton.initialize(new PGPManager(this.getApplicationContext(), PreferencesHelper.getInstance().getUserId(),userPassword.toCharArray()));
             PGPUtils.printSignaturesFromKey(PGPManagerSingleton.getInstance().getPublicKey());
         } catch (Exception e) {
             e.printStackTrace();
