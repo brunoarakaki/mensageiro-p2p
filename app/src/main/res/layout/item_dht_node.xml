@@ -19,6 +19,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="@dimen/vertical_margin"
+        />
+    <TextView
+        android:id="@+id/node_port_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/vertical_margin"
         android:paddingBottom="@dimen/vertical_margin"
         />
 

@@ -132,7 +132,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     }
 
     public void initialize() {
-        progressDialog.show("Conectando à rede...", 200, new Runnable() {
+        progressDialog.show("Conectando à rede...", 20000, new Runnable() {
             @Override
             public void run() {
                 showMessage("Não foi possível conectar na rede DHT!");

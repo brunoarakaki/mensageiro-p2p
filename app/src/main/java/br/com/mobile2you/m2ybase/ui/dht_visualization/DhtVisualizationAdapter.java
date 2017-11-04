@@ -6,6 +6,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import net.tomp2p.peers.PeerAddress;
+
+import java.util.List;
+
 import br.com.mobile2you.m2ybase.R;
 import br.com.mobile2you.m2ybase.ui.base.BaseRecyclerViewAdapter;
 import butterknife.BindView;
@@ -16,6 +20,12 @@ import butterknife.ButterKnife;
  */
 
 public class DhtVisualizationAdapter extends BaseRecyclerViewAdapter {
+    private List<PeerAddress> mPeerAddresses;
+
+    public void setPeerAddresses(List<PeerAddress> peerAddresses) {
+        mPeerAddresses = peerAddresses;
+        notifyDataChanged();
+    }
 
     public DhtVisualizationAdapter(View.OnClickListener tryAgainClickListener) {
         super(tryAgainClickListener);
@@ -23,13 +33,13 @@ public class DhtVisualizationAdapter extends BaseRecyclerViewAdapter {
 
     @Override
     public int getDisplayableItemsCount() {
-        return 5;
+        return mPeerAddresses.size();
     }
 
     @Override
     public void onBindRecyclerViewHolder(RecyclerView.ViewHolder holder, int position) {
         if(holder instanceof DhtNodeViewHolder) {
-            ((DhtNodeViewHolder) holder).Bind("Nome do nó", "Endereço do nó");
+            ((DhtNodeViewHolder) holder).Bind(mPeerAddresses.get(position));
         }
     }
 
@@ -44,16 +54,19 @@ public class DhtVisualizationAdapter extends BaseRecyclerViewAdapter {
         TextView mNodeNameTextView;
         @BindView(R.id.node_address_text)
         TextView mNodeAddressTextView;
+        @BindView(R.id.node_port_text)
+        TextView mNodePortTextView;
 
         public DhtNodeViewHolder(View itemView){
             super(itemView);
             ButterKnife.bind(this, itemView);
         }
 
-        public void Bind(final String name, final String address){
-            mNodeNameTextView.setText(name);
-            mNodeAddressTextView.setText(address);
-        }
+        public void Bind(final PeerAddress peerAddress){
+            mNodeNameTextView.setText(peerAddress.peerId().toString(true));
+            mNodeAddressTextView.setText(peerAddress.peerSocketAddress().inetAddress().toString());
+            mNodePortTextView.setText(peerAddress.peerSocketAddress().tcpPort());
+    }
 
     }
 }

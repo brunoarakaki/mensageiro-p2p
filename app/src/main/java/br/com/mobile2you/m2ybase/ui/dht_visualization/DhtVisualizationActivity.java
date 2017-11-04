@@ -6,6 +6,8 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
+import com.poli.tcc.dht.DHT;
+
 import br.com.mobile2you.m2ybase.R;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -27,6 +29,7 @@ public class DhtVisualizationActivity extends AppCompatActivity implements DhtVi
         mPresenter.attachView(this);
 
         setRecyclerView();
+        mAdapter.setPeerAddresses(DHT.serverPeer.peer().peerBean().peerMap().all());
     }
 
 
