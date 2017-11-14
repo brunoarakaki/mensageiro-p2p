@@ -39,22 +39,20 @@ import br.com.mobile2you.m2ybase.data.local.PGPUtils;
 
 public class TrustDialogFragment extends DialogFragment {
 
-    private Context mContext;
     private Contact mUser;
     private TextView mTitle;
     private ListView mList;
     private CheckBox mCheck;
+    private boolean isSelf;
 
     public TrustDialogFragment() {
 
     }
 
-    public static TrustDialogFragment newInstance(Context context, Contact user) {
+    public static TrustDialogFragment newInstance(Contact user, boolean self) {
         TrustDialogFragment frag = new TrustDialogFragment();
-        frag.setContext(context);
         frag.setUser(user);
-        Bundle args = new Bundle();
-        frag.setArguments(args);
+        frag.setIsSelf(self);
         return frag;
     }
 
@@ -69,6 +67,7 @@ public class TrustDialogFragment extends DialogFragment {
         super.onViewCreated(view, savedInstanceState);
         // Get field from view
         try {
+            final TrustDialogFragment self = this;
             String username = mUser.getId();
             byte[] pubKeyEncoded = mUser.getChatPublicKeyRingEncoded();
             PGPPublicKeyRing pubKeyRing = PGPUtils.readPublicKeyRingFromStream(new ByteArrayInputStream(pubKeyEncoded));
@@ -76,30 +75,37 @@ public class TrustDialogFragment extends DialogFragment {
             ArrayList<String> trusteeList = PGPUtils.getSignaturesUserList(pubKey);
             mTitle = (TextView) view.findViewById(R.id.contact_trust_title);
             mTitle.setText(getString(R.string.contact_trust_title, username));
+            ArrayAdapter<String> listAdaptor = new ArrayAdapter<>(getActivity(), R.layout.item_text, trusteeList);
             mList = (ListView) view.findViewById(R.id.contact_trust_list);
-            mList.setAdapter(new ArrayAdapter<>(mContext, R.layout.item_text, trusteeList));
+            mList.setAdapter(listAdaptor);
+            mList.invalidateViews();
             mCheck = (CheckBox) view.findViewById(R.id.contact_trust_check);
-            mCheck.setText(getString(R.string.contact_trust_check, username));
-            mCheck.setChecked(PGPManagerSingleton.getInstance().hasSignedPublicKey(pubKey));
-            mCheck.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-                    Intent intent = new Intent(Constants.FILTER_SIGNATURE_UPDATE);
-                    intent.putExtra("trust", checked);
-                    LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
-                }
-            });
+            if (isSelf) {
+                mCheck.setVisibility(View.INVISIBLE);
+            } else {
+                mCheck.setText(getString(R.string.contact_trust_check, username));
+                mCheck.setChecked(PGPManagerSingleton.getInstance().hasSignedPublicKey(pubKey));
+                mCheck.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                        Intent intent = new Intent(Constants.FILTER_CERTIFICATE_SIGN);
+                        intent.putExtra("trust", checked);
+                        LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
+                        self.dismiss();
+                    }
+                });
+            }
             PGPUtils.printSignaturesFromKey(pubKey);
         } catch (IOException | PGPException e) {
             e.printStackTrace();
         }
     }
 
-    private void setContext(Context context) {
-        this.mContext = context;
-    }
-
     private void setUser(Contact user) {
         this.mUser = user;
+    }
+
+    private void setIsSelf(boolean self) {
+        this.isSelf = self;
     }
 }

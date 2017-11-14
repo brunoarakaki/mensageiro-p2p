@@ -21,6 +21,10 @@
         android:title="@string/menu_reconnect"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_view_certificate"
+        android:title="Ver meu certificado"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_direct_connection"
         android:title="@string/menu_direct_connection"
         app:showAsAction="never" />

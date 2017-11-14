@@ -54,6 +54,7 @@ public class Constants {
     public static final String FILTER_CHAT_RECEIVER = "FILTER_CHAT_RECEIVER";
     public static final String FILTER_DHT_CONNECTION = "FILTER_DHT_CONNECTION";
     public static final String FILTER_SIGNATURE_UPDATE = "FILTER_SIGNATURE_UPDATE";
+    public static final String FILTER_CERTIFICATE_SIGN = "FILTER_CERTIFICATE_SIGN";
 
     public static final String NSD_SERVICE_NAME = "whatsp2p";
     public static final String NSD_SERVICE_TYPE = "_whatsp2p._tcp";

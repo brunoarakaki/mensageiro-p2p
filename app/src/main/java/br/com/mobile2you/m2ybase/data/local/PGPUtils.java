@@ -51,6 +51,7 @@ import org.spongycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.spongycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.spongycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.spongycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
+import org.spongycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.spongycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.spongycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
 import org.spongycastle.util.encoders.Base64;
@@ -76,10 +77,9 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
-
-import static br.com.mobile2you.m2ybase.data.local.PGPManager.DEFAULT_KEYSTORE_FILE;
 
 public class PGPUtils {
 
@@ -252,6 +252,19 @@ public class PGPUtils {
         return null;
     }
 
+    public static PGPPublicKey getSignKeyFromKeyRing(PGPPublicKeyRing keyRing) {
+        Iterator<PGPPublicKey> keyIter = keyRing.getPublicKeys();
+        while (keyIter.hasNext())
+        {
+            PGPPublicKey key = keyIter.next();
+            if (key.isMasterKey()) {
+                return key;
+            }
+
+        }
+        return null;
+    }
+
     static PGPSecretKey readSecretKey(String fileName) throws IOException, PGPException {
         InputStream keyIn = new BufferedInputStream(new FileInputStream(fileName));
         PGPSecretKey secKey = readSecretKey(keyIn);
@@ -328,5 +341,17 @@ public class PGPUtils {
             }
         }
         return users;
+    }
+
+    public static boolean publicKeyIsSignedBy(PGPPublicKey targetPubKey, PGPPublicKey signeerPubKey) throws PGPException {
+        Iterator<PGPSignature> it = targetPubKey.getSignatures();
+        while (it.hasNext()) {
+            PGPSignature sign = it.next();
+            sign.init(new JcaPGPContentVerifierBuilderProvider(), signeerPubKey);
+            if (sign.getSignatureType() == PGPSignature.SUBKEY_REVOCATION && sign.verifyCertification(signeerPubKey, targetPubKey)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

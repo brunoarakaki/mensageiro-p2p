@@ -54,17 +54,19 @@ import org.spongycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodG
 public class PGPManager {
 
     private Context mContext;
+    private String myId;
     private PGPPublicKeyRing pubKeyRing;
     private PGPSecretKeyRing secKeyRing;
 
-    public static String DEFAULT_KEYSTORE_FILE = "keystore";
+//    public static String DEFAULT_KEYSTORE_FILE = "keystore";
 
     public PGPManager(Context context, String identifier, char[] passwd) throws Exception {
         this.mContext = context;
+        this.myId = identifier;
 
         try {
-            FileInputStream pubFile = context.openFileInput(DEFAULT_KEYSTORE_FILE + ".pkr");
-            FileInputStream secFile = context.openFileInput(DEFAULT_KEYSTORE_FILE + ".skr");
+            FileInputStream pubFile = context.openFileInput(myId + ".pkr");
+            FileInputStream secFile = context.openFileInput(myId + ".skr");
             this.pubKeyRing = new PGPPublicKeyRing(pubFile, new JcaKeyFingerprintCalculator());
             this.secKeyRing = new PGPSecretKeyRing(secFile, new JcaKeyFingerprintCalculator());
         } catch (FileNotFoundException e) {
@@ -78,19 +80,19 @@ public class PGPManager {
     public void save() throws IOException {
 
         BufferedOutputStream pubout = new BufferedOutputStream
-                (mContext.openFileOutput(DEFAULT_KEYSTORE_FILE + ".pkr", Context.MODE_PRIVATE));
+                (mContext.openFileOutput(myId + ".pkr", Context.MODE_PRIVATE));
         this.pubKeyRing.encode(pubout);
         pubout.close();
 
         BufferedOutputStream secout = new BufferedOutputStream
-                (mContext.openFileOutput(DEFAULT_KEYSTORE_FILE + ".skr", Context.MODE_PRIVATE));
+                (mContext.openFileOutput(myId + ".skr", Context.MODE_PRIVATE));
         this.secKeyRing.encode(secout);
         secout.close();
     }
 
     public PGPPublicKeyRing getPublicKeyRing() { return pubKeyRing; }
 
-    public PGPPublicKey getPublicKey() {
+    public PGPPublicKey getEncryptionKey() {
         Iterator <PGPPublicKey> it = pubKeyRing.getPublicKeys();
         while (it.hasNext()) {
             PGPPublicKey key = it.next();
@@ -121,46 +123,44 @@ public class PGPManager {
         return pgpSecKey.extractPrivateKey(decryptor);
     }
 
-    public PGPSignature generateSignatureForPublicKey(String identifier, PGPPublicKey pubKey, char[] pass) throws PGPException {
+    public String getUserId() {
         PGPPublicKey signKey = this.getSignKey();
-        PGPSignatureGenerator    sGen = new PGPSignatureGenerator(new BcPGPContentSignerBuilder(pubKey.getAlgorithm(), PGPUtil.SHA1));
-        sGen.init(PGPSignature.DEFAULT_CERTIFICATION, this.getPrivateKey(pass));
         Iterator<String> it = signKey.getUserIDs();
-        while (it.hasNext())
-        {
-            String userId = it.next();
-            PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
-            spGen.setSignerUserID(false, userId);
-//            boolean isHumanReadable = true;
-//            spGen.setNotationData(true, isHumanReadable, identifier, "assinado");
-            sGen.setHashedSubpackets(spGen.generate());
-            // Just the first one!
-            break;
+        while (it.hasNext()) {
+            return it.next();
         }
-        PGPSignature certification = sGen.generateCertification(identifier, pubKey);
+        return null;
+    }
+
+    public PGPSignature generateSignatureForPublicKey(PGPPublicKey pubKey, char[] pass) throws PGPException {
+        PGPPublicKey thisKey = this.getSignKey();
+        String userId = this.getUserId();
+        PGPSignatureGenerator    sGen = new PGPSignatureGenerator(new BcPGPContentSignerBuilder(thisKey.getAlgorithm(), PGPUtil.SHA1));
+        sGen.init(PGPSignature.SUBKEY_REVOCATION, this.getPrivateKey(pass));
+        PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
+        spGen.setSignerUserID(false, userId);
+        sGen.setHashedSubpackets(spGen.generate());
+        PGPSignature certification = sGen.generateCertification(thisKey, pubKey);
         return certification;
     }
 
-    public PGPPublicKey signPublicKey(String identifier, PGPSignature signature) throws PGPException, IOException {
-        PGPPublicKey thisKey = this.getPublicKey();
-        Iterator<PGPSignature> it = thisKey.getSignatures();
-        while (it.hasNext()) {
-            PGPSignature sig = it.next();
-            sig.init(new JcaPGPContentVerifierBuilderProvider(), thisKey);
-            if (sig.verifyCertification(identifier.getBytes(), thisKey)) return thisKey;
+    public PGPPublicKey addSignatureToPublicKey(PGPSignature signature, PGPPublicKey signeerKey) throws PGPException, IOException {
+        PGPPublicKey thisKey = this.getEncryptionKey();
+        if (PGPUtils.publicKeyIsSignedBy(thisKey, signeerKey)) {
+            return thisKey;
         }
         PGPPublicKey newKey = PGPPublicKey.addCertification(thisKey, signature);
         return newKey;
     }
 
-    public PGPPublicKey removePublicKeySignature(String identifier, PGPSignature signature) throws PGPException, IOException {
-        PGPPublicKey thisKey = this.getPublicKey();
+    public PGPPublicKey removePublicKeySignature(PGPPublicKey pubKey) throws PGPException, IOException {
+        PGPPublicKey thisKey = this.getEncryptionKey();
         Iterator<PGPSignature> it = thisKey.getSignatures();
         while (it.hasNext()) {
             PGPSignature sig = it.next();
-            sig.init(new JcaPGPContentVerifierBuilderProvider(), thisKey);
-            if (sig.verifyCertification(identifier.getBytes(), thisKey)) {
-                PGPPublicKey newKey = PGPPublicKey.removeCertification(thisKey, signature);
+            sig.init(new JcaPGPContentVerifierBuilderProvider(), pubKey);
+            if (sig.getSignatureType() == PGPSignature.SUBKEY_REVOCATION && sig.verifyCertification(pubKey, thisKey)) {
+                PGPPublicKey newKey = PGPPublicKey.removeCertification(thisKey, sig);
                 return newKey;
             }
         }
@@ -168,35 +168,19 @@ public class PGPManager {
     }
 
     public boolean hasSignedPublicKey(PGPPublicKey pubKey) throws PGPException {
-        Iterator<PGPSignature> it = pubKey.getSignatures();
-        PGPPublicKey thisKey = this.getPublicKey();
-        while (it.hasNext()) {
-            PGPSignature sign = it.next();
-            sign.init(new JcaPGPContentVerifierBuilderProvider(), thisKey);
-            if (sign.verify()) {
-                return true;
-            }
+        PGPPublicKey thisKey = this.getSignKey();
+        if (PGPUtils.publicKeyIsSignedBy(pubKey, thisKey)) {
+            return true;
         }
         return false;
     }
 
-    public void updatePublicKeyRing(PGPPublicKey newKey) throws IOException {
-        PGPPublicKey thisKey = this.getPublicKey();
+    public void updatePublicEncryptionKey(PGPPublicKey newKey) throws IOException {
+        PGPPublicKey thisKey = this.getEncryptionKey();
         pubKeyRing = PGPPublicKeyRing.removePublicKey(pubKeyRing, thisKey);
         pubKeyRing = PGPPublicKeyRing.insertPublicKey(pubKeyRing, newKey);
         secKeyRing = PGPSecretKeyRing.replacePublicKeys(secKeyRing, pubKeyRing);
         this.save();
-    }
-
-    public boolean isSignedBy(String identifier, PGPPublicKey pubKey) throws PGPException {
-        PGPPublicKey thisKey = this.getPublicKey();
-        Iterator<PGPSignature> it = thisKey.getSignatures();
-        while (it.hasNext()) {
-            PGPSignature sig = it.next();
-            sig.init(new JcaPGPContentVerifierBuilderProvider(), pubKey);
-            if (sig.verifyCertification(identifier.getBytes(), pubKey)) return true;
-        }
-        return false;
     }
 
     public byte[] encrypt(byte[] rawData, PGPPublicKey encKey) throws IOException, NoSuchProviderException, PGPException {

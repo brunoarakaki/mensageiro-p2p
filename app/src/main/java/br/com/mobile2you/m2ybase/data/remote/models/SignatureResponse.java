@@ -1,5 +1,7 @@
 package br.com.mobile2you.m2ybase.data.remote.models;
 
+import org.spongycastle.openpgp.PGPPublicKey;
+import org.spongycastle.openpgp.PGPPublicKeyRing;
 import org.spongycastle.openpgp.PGPSignature;
 
 import java.io.ByteArrayOutputStream;
@@ -13,17 +15,23 @@ import java.io.Serializable;
 public class SignatureResponse extends BaseResponse implements Serializable {
 
     private byte[] signatureEncoded;
+    private byte[] publicKeyRingEncoded;
     private String identifier;
     private boolean trust;
 
-    public SignatureResponse(String identifier, PGPSignature signature, boolean trust) {
+    public SignatureResponse(String identifier, PGPSignature signature, PGPPublicKeyRing publicKeyRing, boolean trust) {
         this.identifier = identifier;
         this.setSignature(signature);
+        this.setPublicKeyRing(publicKeyRing);
         this.trust = trust;
     }
 
-    public byte[] getEncoded() {
+    public byte[] getSignatureEncoded() {
         return signatureEncoded;
+    }
+
+    public byte[] getPublicKeyRingEncoded() {
+        return publicKeyRingEncoded;
     }
 
     public void setSignature(PGPSignature signature) {
@@ -31,6 +39,16 @@ public class SignatureResponse extends BaseResponse implements Serializable {
             ByteArrayOutputStream outSig = new ByteArrayOutputStream();
             signature.encode(outSig);
             signatureEncoded = outSig.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setPublicKeyRing(PGPPublicKeyRing publicKeyRing) {
+        try {
+            ByteArrayOutputStream outSig = new ByteArrayOutputStream();
+            publicKeyRing.encode(outSig);
+            publicKeyRingEncoded = outSig.toByteArray();
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -14,6 +14,7 @@ import com.poli.tcc.dht.DHT;
 import net.tomp2p.dht.FuturePut;
 
 import org.spongycastle.openpgp.PGPPublicKey;
+import org.spongycastle.openpgp.PGPPublicKeyRing;
 import org.spongycastle.openpgp.PGPSignature;
 
 import java.io.ByteArrayInputStream;
@@ -68,29 +69,39 @@ public class ChatReceiver implements Runnable {
                 LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
             } else if (response instanceof SignatureResponse) {
                 SignatureResponse message = (SignatureResponse) response;
-                PGPSignature signature = PGPUtils.parseSignatureFromEncoded(new ByteArrayInputStream(message.getEncoded()));
-                String identifier = message.getIdentifier();
+                PGPSignature signature = PGPUtils.parseSignatureFromEncoded(new ByteArrayInputStream(message.getSignatureEncoded()));
+                PGPPublicKeyRing pubKeyRing = PGPUtils.readPublicKeyRingFromStream(new ByteArrayInputStream(message.getPublicKeyRingEncoded()));
+                PGPPublicKey signKey = PGPUtils.getSignKeyFromKeyRing(pubKeyRing);
                 if (message.getTrust()) {
-                    PGPPublicKey newKey = PGPManagerSingleton.getInstance().signPublicKey(identifier, signature);
+                    PGPPublicKey newKey = PGPManagerSingleton.getInstance().addSignatureToPublicKey(signature, signKey);
                     PGPUtils.printSignaturesFromKey(newKey);
-                    PGPManagerSingleton.getInstance().updatePublicKeyRing(newKey);
+                    PGPManagerSingleton.getInstance().updatePublicEncryptionKey(newKey);
                     FuturePut fput = DHT.putProtected("chatPublicKey", PGPManagerSingleton.getInstance().getPublicKeyRing().getEncoded());
                     if (fput.isSuccess()) {
                         Log.i("DHT", "[DHT] Chat public key updated");
+                        Intent intent = new Intent(Constants.FILTER_SIGNATURE_UPDATE);
+                        intent.putExtra("message", message);
+                        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
                     } else {
                         Log.i("DHT", "[DHT] Chat public key update failed: " + fput.failedReason());
                     }
                 } else {
-                    PGPPublicKey newKey = PGPManagerSingleton.getInstance().removePublicKeySignature(identifier, signature);
-                    PGPManagerSingleton.getInstance().updatePublicKeyRing(newKey);
+                    PGPPublicKey newKey = PGPManagerSingleton.getInstance().removePublicKeySignature(signKey);
+                    PGPManagerSingleton.getInstance().updatePublicEncryptionKey(newKey);
                     FuturePut fput = DHT.putProtected("chatPublicKey", PGPManagerSingleton.getInstance().getPublicKeyRing().getEncoded());
-                    if (fput.isFailed()) {
+                    if (fput.isSuccess()) {
+                        Log.i("DHT", "[DHT] Chat public key updated");
+                        Intent intent = new Intent(Constants.FILTER_SIGNATURE_UPDATE);
+                        intent.putExtra("message", message);
+                        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+                    } else {
                         Log.i("DHT", "[DHT] Chat public key update failed: " + fput.failedReason());
                     }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
+            ErrorManager.handleError(e);
         }
     }
 }

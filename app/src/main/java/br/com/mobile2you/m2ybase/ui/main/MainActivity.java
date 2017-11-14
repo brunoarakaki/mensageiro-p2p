@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
@@ -25,6 +26,12 @@ import com.poli.tcc.dht.DHTNode;
 import net.tomp2p.dht.FuturePut;
 import net.tomp2p.peers.Number160;
 
+import org.spongycastle.openpgp.PGPPublicKey;
+import org.spongycastle.openpgp.PGPPublicKeyRing;
+import org.spongycastle.openpgp.PGPSignature;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.KeyPair;
@@ -36,6 +43,7 @@ import br.com.mobile2you.m2ybase.R;
 import br.com.mobile2you.m2ybase.data.local.ChatServer;
 import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.local.ContactDatabaseHelper;
+import br.com.mobile2you.m2ybase.data.local.ErrorManager;
 import br.com.mobile2you.m2ybase.data.local.NodeDiscovery;
 import br.com.mobile2you.m2ybase.data.local.PGPManager;
 import br.com.mobile2you.m2ybase.data.local.PGPManagerSingleton;
@@ -44,8 +52,10 @@ import br.com.mobile2you.m2ybase.data.local.PreferencesHelper;
 import br.com.mobile2you.m2ybase.data.local.ProgressDialogHelper;
 import br.com.mobile2you.m2ybase.data.local.Utils;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
+import br.com.mobile2you.m2ybase.data.remote.models.SignatureResponse;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
 import br.com.mobile2you.m2ybase.ui.chat.ChatActivity;
+import br.com.mobile2you.m2ybase.ui.common.TrustDialogFragment;
 import br.com.mobile2you.m2ybase.utils.exceptions.*;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -59,6 +69,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     private Thread chatThread;
     private NodeDiscovery nodeDiscovery;
     private NewMessageBroadcast newMessageBroadcast;
+    private SignatureUpdateBroadcast signatureUpdateBroadcast;
     private DHTConnectionBroadcast dhtConnectionBroadcast;
     private ProgressDialogHelper progressDialog;
     private int mChatPort;
@@ -80,8 +91,13 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         mMainPresenter = new MainPresenter();
         mMainPresenter.attachView(this);
 
+        ErrorManager.setActivity(this);
+
         newMessageBroadcast = new NewMessageBroadcast();
         LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(newMessageBroadcast, new IntentFilter(Constants.FILTER_CHAT_RECEIVER));
+
+        signatureUpdateBroadcast = new SignatureUpdateBroadcast();
+        LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(signatureUpdateBroadcast, new IntentFilter(Constants.FILTER_SIGNATURE_UPDATE));
 
         dhtConnectionBroadcast = new DHTConnectionBroadcast();
         LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(dhtConnectionBroadcast, new IntentFilter(Constants.FILTER_DHT_CONNECTION));
@@ -131,12 +147,6 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     }
 
     public void initialize() {
-        progressDialog.show("Conectando à rede...", 20000, new Runnable() {
-            @Override
-            public void run() {
-                showMessage("Não foi possível conectar na rede DHT!");
-            }
-        });
         me = new Contact(mUserId);
         nodeDiscovery = new NodeDiscovery(getApplicationContext(), mDHTPort);
         buildPGPManager();
@@ -422,11 +432,12 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
     private void buildPGPManager() {
         try {
+            progressDialog.show("Obtendo chaves de segurança...");
             PGPManagerSingleton.initialize(new PGPManager(this.getApplicationContext(), PreferencesHelper.getInstance().getUserId(), "12345".toCharArray()));
-            PGPUtils.printSignaturesFromKey(PGPManagerSingleton.getInstance().getPublicKey());
         } catch (Exception e) {
             e.printStackTrace();
         }
+        progressDialog.hide();
     }
 
     private void connectToDHT() {
@@ -434,11 +445,11 @@ public class MainActivity extends BaseActivity implements MainMvpView {
             @Override
             public void run() {
                 try {
+                    progressDialog.show("Conectando ao tracker...");
                     String mUserId = PreferencesHelper.getInstance().getUserId();
                     Number160 peerId = DHT.createPeerID(mUserId);
                     DHTNode thisNode = new DHTNode(peerId);
                     KeyPair signKeyPair = Utils.getKeyPairFromKeyStore(getApplicationContext(), "DSA");
-//                    KeyPair chatKeyPair = Utils.getKeyPairFromKeyStore(getApplicationContext(), "RSA");
                     if (signKeyPair == null) {
                         throw new KeyPairNullException();
                     }
@@ -453,9 +464,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                     DHT.start(thisNode, mDHTPort);
                     if (DHT.connectTo(trackerAddress, trackerPort)) {
                         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(new Intent(Constants.FILTER_DHT_CONNECTION));
-                    } else {
-                        nodeDiscovery.startLookup();
                     }
+                    nodeDiscovery.startLookup();
                 } catch (DHTException.UsernameAlreadyTakenException e) {
                     showToast("Username already taken!");
                 } catch (KeyPairNullException e) {
@@ -464,6 +474,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                 } catch (ClassNotFoundException | IOException e) {
                     e.printStackTrace();
                 }
+                progressDialog.hide();
             }
         }).start();
     }
@@ -501,6 +512,11 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                 });
                 connectToDHT();
                 break;
+            case R.id.action_view_certificate:
+                FragmentManager fm = getSupportFragmentManager();
+                TrustDialogFragment trustDialogFragment = TrustDialogFragment.newInstance(me, true);
+                trustDialogFragment.show(fm, "dialog_contact_trust");
+                break;
             case R.id.action_direct_connection:
                 showDirectConnectionDialog();
                 break;
@@ -530,6 +546,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         DHT.shutDown();
         nodeDiscovery.shutdown();
         LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(newMessageBroadcast);
+        LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(signatureUpdateBroadcast);
         LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(dhtConnectionBroadcast);
     }
 
@@ -558,10 +575,28 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         @Override
         public void onReceive(Context context, Intent intent) {
             MessageResponse mes = (MessageResponse) intent.getSerializableExtra("message");
-            Toast.makeText(MainActivity.this, "New message received from " + mes.getSender().getId(), Toast.LENGTH_SHORT).show();
+            showToast("New message received from " + mes.getSender().getId());
             ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
             if (dbHelper.search(mes.getSender().getId()).isEmpty()) {
                 mMainPresenter.addContact(getApplicationContext(), mes.getSender());
+            }
+        }
+    }
+
+    private class SignatureUpdateBroadcast extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            try {
+                SignatureResponse mes = (SignatureResponse) intent.getSerializableExtra("message");
+                me.setChatPublicKeyRingEncoded(PGPManagerSingleton.getInstance().getPublicKeyRing().getEncoded());
+                if (mes.getTrust()) {
+                    showToast(mes.getIdentifier() + " just signed your certificate");
+                } else {
+                    showToast(mes.getIdentifier() + " just revoked his/her signature from your certificate");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }

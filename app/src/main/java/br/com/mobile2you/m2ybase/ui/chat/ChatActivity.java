@@ -38,6 +38,7 @@ import br.com.mobile2you.m2ybase.R;
 import br.com.mobile2you.m2ybase.data.local.ChatClient;
 import br.com.mobile2you.m2ybase.data.local.Contact;
 import br.com.mobile2you.m2ybase.data.local.ContactDatabaseHelper;
+import br.com.mobile2you.m2ybase.data.local.ErrorManager;
 import br.com.mobile2you.m2ybase.data.local.MessageDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.local.PGPManagerSingleton;
 import br.com.mobile2you.m2ybase.data.local.PGPUtils;
@@ -64,7 +65,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     private boolean isDirectConnection;
     private messagesUpdateBroadcastReceiver messageBroadcast;
     private ProgressDialogHelper progressDialog;
-    private SignatureUpdateBroadcast signatureUpdateBroadcast;
+    private CertificateSignBroadcast certificateSignBroadcast;
 
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
@@ -88,33 +89,42 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         friend = (Contact) extras.getSerializable(Constants.EXTRA_CONTACT);
         isDirectConnection = extras.getBoolean(Constants.EXTRA_DIRECT_CONNECTION);
 
-        signatureUpdateBroadcast = new SignatureUpdateBroadcast();
-        LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(signatureUpdateBroadcast, new IntentFilter(Constants.FILTER_SIGNATURE_UPDATE));
+        certificateSignBroadcast = new CertificateSignBroadcast();
+        LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(certificateSignBroadcast, new IntentFilter(Constants.FILTER_CERTIFICATE_SIGN));
 
         chatClient = new ChatClient();
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                progressDialog.show("Conectando...");
-                friend.updateChatPublicKey(getApplicationContext());
-                if (!connectToClient(friend.getIp(), friend.getPort())) {
-                    if(isDirectConnection){
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                showConnectionFailDialog();
+                try {
+                    progressDialog.show("Conectando...");
+                    friend.updateChatPublicKey(getApplicationContext());
+                    if (!connectToClient(friend.getIp(), friend.getPort())) {
+                        if (isDirectConnection) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    showConnectionFailDialog();
+                                }
+                            });
+                        } else {
+                            friend.setIp(null);
+                            friend.setPort(0);
+                            try {
+                                lookupAndConnect();
+                            } catch (IOException | InterruptedException | ExecutionException e) {
+                                e.printStackTrace();
                             }
-                        });
-                    } else {
-                        friend.setIp(null);
-                        friend.setPort(0);
-                        try {
-                            lookupAndConnect();
-                        } catch (IOException | InterruptedException | ExecutionException  e) {
-                             e.printStackTrace();
                         }
                     }
+                } catch (ContactNotFoundException e) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            showConnectionFailDialog();
+                        }
+                    });
                 }
                 progressDialog.hide();
                 updateActionBar();
@@ -195,9 +205,8 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         int id = item.getItemId();
         switch (id) {
             case R.id.action_sign_key:
-                //signKey();
                 FragmentManager fm = getSupportFragmentManager();
-                TrustDialogFragment trustDialogFragment = TrustDialogFragment.newInstance(this.getApplicationContext(), friend);
+                TrustDialogFragment trustDialogFragment = TrustDialogFragment.newInstance(friend, false);
                 trustDialogFragment.show(fm, "dialog_contact_trust");
                 break;
         }
@@ -269,7 +278,7 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         try {
             mPresenter.detachView();
             LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(messageBroadcast);
-            LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(signatureUpdateBroadcast);
+            LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(certificateSignBroadcast);
             chatClient.shutdown();
         } catch (IOException e) {
             e.printStackTrace();
@@ -341,39 +350,45 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
         }
     }
 
-    private void updateSignature(boolean trust) {
-        try {
-            PGPPublicKeyRing chatPublicKeyRing = PGPUtils.readPublicKeyRingFromStream(new ByteArrayInputStream(friend.getChatPublicKeyRingEncoded()));
-            PGPSignature signature = PGPManagerSingleton.getInstance().generateSignatureForPublicKey(me.getId(), chatPublicKeyRing.getPublicKey(), "12345".toCharArray());
-            final SignatureResponse message = new SignatureResponse(me.getId(), signature, trust);
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if (chatClient.isConnected() && chatClient.sendMessage(message)) {
-                        showToast("Assinatura atualizada");
-                        try {
-                            Thread.sleep(3000);
-                            friend.updateChatPublicKey(getApplicationContext());
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
 
-                    }
-                }
-            }).start();
-        } catch (PGPException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
-    private class SignatureUpdateBroadcast extends BroadcastReceiver {
+    private class CertificateSignBroadcast extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
             Boolean trust = intent.getBooleanExtra("trust", false);
-            updateSignature(trust);
+            updateCertificate(trust);
+        }
+
+        private void updateCertificate(boolean trust) {
+            try {
+                PGPPublicKeyRing chatPublicKeyRing = PGPUtils.readPublicKeyRingFromStream(new ByteArrayInputStream(friend.getChatPublicKeyRingEncoded()));
+                PGPPublicKeyRing myPublicKeyRing = PGPManagerSingleton.getInstance().getPublicKeyRing();
+                PGPSignature signature = PGPManagerSingleton.getInstance().generateSignatureForPublicKey(PGPUtils.getEncryptionKeyFromKeyRing(chatPublicKeyRing), "12345".toCharArray());
+                final SignatureResponse message = new SignatureResponse(me.getId(), signature, myPublicKeyRing, trust);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (chatClient.isConnected() && chatClient.sendMessage(message)) {
+                            showToast("Certificate updated! Please wait a few seconds for changes to take effect");
+                            try {
+                                Thread.sleep(5000);
+                                friend.updateChatPublicKey(getApplicationContext());
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } catch (ContactNotFoundException e) {
+                                showToast("Could not find this contact. Make sure he/she is online");
+                            }
+
+                        }
+                    }
+                }).start();
+            } catch (PGPException e) {
+                e.printStackTrace();
+                ErrorManager.handleError(e);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
