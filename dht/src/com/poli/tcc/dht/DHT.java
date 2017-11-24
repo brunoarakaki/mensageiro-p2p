@@ -40,13 +40,17 @@ import net.tomp2p.futures.FutureDiscover;
 import net.tomp2p.nat.FutureNAT;
 import net.tomp2p.nat.PeerBuilderNAT;
 import net.tomp2p.nat.PeerNAT;
+import net.tomp2p.p2p.JobScheduler;
 import net.tomp2p.p2p.PeerBuilder;
+import net.tomp2p.p2p.RequestP2PConfiguration;
 import net.tomp2p.p2p.builder.BootstrapBuilder;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.peers.PeerMapChangeListener;
 import net.tomp2p.peers.PeerStatistic;
 import net.tomp2p.relay.FutureRelay;
+import net.tomp2p.replication.IndirectReplication;
+import net.tomp2p.rpc.ObjectDataReply;
 import net.tomp2p.storage.Data;
 import net.tomp2p.tracker.TrackerBuilder;
 import net.tomp2p.utils.Utils;
@@ -101,13 +105,13 @@ public class DHT {
 			}
         	
         });
+       
     }
     
     public static Boolean verify() throws UsernameAlreadyTakenException, IOException {
         // Add public key to the network
     	final KeyPair keyPair = serverPeer.peerBean().getKeyPair();
         Number160 locationKey = Number160.createHash(me.getUsername());
-        DHTSecureFrame frame = new DHTSecureFrame(encodePublicKey(keyPair.getPublic()));
         Data publicKeyData = new Data(keyPair.getPublic());
         publicKeyData.protectEntry(keyPair);
         FuturePut keyPut = serverPeer.put(locationKey).keyPair(keyPair).data(publicKeyData).start().awaitUninterruptibly();
@@ -191,7 +195,11 @@ public class DHT {
     }
 
     public static Number160 createPeerID(String id) {
-        return new Number160(String.format("0x%02x", new BigInteger(1, id.getBytes())));
+        return new Number160(id.getBytes());
+    }
+    
+    public static String getOriginalID(Number160 id) {
+    	return new String(id.toByteArray()).trim();
     }
     
     public static PeerAddress lookupUser(String username) throws ClassNotFoundException, IOException {

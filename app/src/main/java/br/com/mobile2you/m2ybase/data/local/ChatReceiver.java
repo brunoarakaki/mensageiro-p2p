@@ -60,7 +60,8 @@ public class ChatReceiver implements Runnable {
         try {
             if (response instanceof MessageResponse) {
                 MessageResponse message = (MessageResponse) response;
-                byte[] decryptedText = PGPManagerSingleton.getInstance().decrypt(message.getEncodedText(), "12345".toCharArray());
+                String userPassword = PreferencesHelper.getInstance().getUserPassword();
+                byte[] decryptedText = PGPManagerSingleton.getInstance().decrypt(message.getEncodedText(), userPassword.toCharArray());
                 message.setPlainText(new String(decryptedText));
                 MessageDatabaseHelper dbHelper = new MessageDatabaseHelper(context);
                 dbHelper.add(message);

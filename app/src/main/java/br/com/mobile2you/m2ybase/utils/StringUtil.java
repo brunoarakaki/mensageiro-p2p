@@ -15,4 +15,8 @@ public class StringUtil extends BaseStringUtils {
         Locale locale = new Locale(Constants.LANGUAGE_PT, Constants.COUNTRY_BR);
         return formatCurrency(floatValue, locale);
     }
+
+    public static boolean isBlank(String str){
+        return str == null || str.trim().equals("");
+    }
 }

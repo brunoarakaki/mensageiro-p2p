@@ -8,75 +8,27 @@ import net.tomp2p.peers.Number160;
 
 public class DHTRequest implements Serializable {
 	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private DHTMessage message;
-	private String id;
-	private int ttl;
-	private int timeout;
-	private Timer timer;
-	private Runnable timeoutCallback;
-	private Runnable successCallback;
+	public static int DIRECT_PEER_BEAN_REQUEST = 1;
+	public static int DIRECT_PEER_BEAN_RESPONSE = 2;
 	
-	public Runnable getTimeoutCallback() {
-		return timeoutCallback;
+	private static final long serialVersionUID = 1L;
+	private int type;
+	private Object content;
+	
+	public int getType() {
+		return this.type;
 	}
-
-	public void setTimeoutCallback(Runnable timeoutCallback) {
-		this.timeoutCallback = timeoutCallback;
+	
+	public void setType(int type) {
+		this.type = type;
 	}
-
-	public DHTRequest(DHTMessage mes, int ttl, int timeout) {
-		this.id = new Number160(new Random(42L)).toString();
-		this.setMessage(mes);
-		this.setTtl(ttl);
-		this.setTimeout(timeout);
+	
+	public Object getContent() {
+		return this.content;
 	}
-
-	public int getTtl() {
-		return ttl;
-	}
-
-	public void setTtl(int ttl) {
-		this.ttl = ttl;
-	}
-
-	public int getTimeout() {
-		return timeout;
-	}
-
-	public void setTimeout(int timeout) {
-		this.timeout = timeout;
-	}
-
-	public DHTMessage getMessage() {
-		return message;
-	}
-
-	public void setMessage(DHTMessage mes) {
-		this.message = mes;
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	public Timer getTimer() {
-		return timer;
-	}
-
-	public void setTimer(Timer timer) {
-		this.timer = timer;
-	}
-
-	public Runnable getSuccessCallback() {
-		return successCallback;
-	}
-
-	public void setSuccessCallback(Runnable successCallback) {
-		this.successCallback = successCallback;
+	
+	public void setContent(Object content) {
+		this.content = content;
 	}
 	
 }

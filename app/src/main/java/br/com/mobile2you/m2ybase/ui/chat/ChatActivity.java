@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.NoSuchProviderException;
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -42,6 +43,7 @@ import br.com.mobile2you.m2ybase.data.local.ErrorManager;
 import br.com.mobile2you.m2ybase.data.local.MessageDatabaseHelper;
 import br.com.mobile2you.m2ybase.data.local.PGPManagerSingleton;
 import br.com.mobile2you.m2ybase.data.local.PGPUtils;
+import br.com.mobile2you.m2ybase.data.local.PreferencesHelper;
 import br.com.mobile2you.m2ybase.data.local.ProgressDialogHelper;
 import br.com.mobile2you.m2ybase.data.local.Utils;
 import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
@@ -74,6 +76,8 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     @BindView(R.id.message_edit_text)
     TextInputEditText mMessageEditText;
 
+    Menu mOptionsMenu;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -94,13 +98,17 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
 
         chatClient = new ChatClient();
 
+        setActionBar(friend.getId(), true);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     progressDialog.show("Conectando...");
                     friend.updateChatPublicKey(getApplicationContext());
-                    if (!connectToClient(friend.getIp(), friend.getPort())) {
+                    if (connectToClient(friend.getIp(), friend.getPort())) {
+                        updateActionBar();
+                    } else {
                         if (isDirectConnection) {
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -127,7 +135,6 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
                     });
                 }
                 progressDialog.hide();
-                updateActionBar();
             }
         }).start();
 
@@ -197,6 +204,8 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_chat, menu);
+        mOptionsMenu = menu;
+        updateActionBar();
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -209,6 +218,9 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
                 TrustDialogFragment trustDialogFragment = TrustDialogFragment.newInstance(friend, false);
                 trustDialogFragment.show(fm, "dialog_contact_trust");
                 break;
+            case android.R.id.home:
+                this.finish();
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -224,7 +236,8 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
                 } else {
                     status = "OFFLINE";
                 }
-                setActionBar(friend.getId() + " - " + status, true);
+                checkTrust();
+                setTitle(friend.getId() + " - " + status);
             }
         });
     }
@@ -317,7 +330,6 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
             reloadMessages();
         }
     }
-
     public InetSocketAddress lookupUser() {
         try {
             PublicKey signPublicKey = Utils.getPublicKeyFromEncoded("DSA", friend.getSignPublicKeyEncoded());
@@ -347,10 +359,29 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
             friend.save(this);
             Log.d("Chat", "Found that user address is " + ip + ":" + port);
             connectToClient(ip, port);
+            updateActionBar();
         }
     }
 
+    public void checkTrust() {
+        MenuItem trustIcon = mOptionsMenu.findItem(R.id.action_sign_key);
+        try {
+            ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(getApplicationContext());
+            PGPPublicKey pubKey = PGPUtils.getEncryptionKeyFromKeyRing(PGPUtils.readPublicKeyRingFromStream(new ByteArrayInputStream(friend.getChatPublicKeyRingEncoded())));
+            ArrayList<String> signedUsers = PGPUtils.getSignaturesUserList(pubKey);
+            if (dbHelper.isFriendWithUsers(signedUsers) || signedUsers.contains(me.getId())) {
+                friend.setTrust(true);
+                friend.save(getApplicationContext());
+                trustIcon.setIcon(R.drawable.ic_check_circle);
+            } else {
+                trustIcon.setIcon(R.drawable.ic_security);
+            }
+        } catch (IOException | PGPException e) {
+            e.printStackTrace();
+            trustIcon.setIcon(R.drawable.ic_security);
+        }
 
+    }
 
     private class CertificateSignBroadcast extends BroadcastReceiver {
 
@@ -362,22 +393,24 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
 
         private void updateCertificate(boolean trust) {
             try {
+                String userPassword = PreferencesHelper.getInstance().getUserPassword();
                 PGPPublicKeyRing chatPublicKeyRing = PGPUtils.readPublicKeyRingFromStream(new ByteArrayInputStream(friend.getChatPublicKeyRingEncoded()));
                 PGPPublicKeyRing myPublicKeyRing = PGPManagerSingleton.getInstance().getPublicKeyRing();
-                PGPSignature signature = PGPManagerSingleton.getInstance().generateSignatureForPublicKey(PGPUtils.getEncryptionKeyFromKeyRing(chatPublicKeyRing), "12345".toCharArray());
+                PGPSignature signature = PGPManagerSingleton.getInstance().generateSignatureForPublicKey(PGPUtils.getEncryptionKeyFromKeyRing(chatPublicKeyRing), userPassword.toCharArray());
                 final SignatureResponse message = new SignatureResponse(me.getId(), signature, myPublicKeyRing, trust);
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
                         if (chatClient.isConnected() && chatClient.sendMessage(message)) {
-                            showToast("Certificate updated! Please wait a few seconds for changes to take effect");
+                            showToast("Certificado atualizado! Por favor aguarde alguns segundos para as mudanças fazerem efeito");
                             try {
                                 Thread.sleep(5000);
+                                updateActionBar();
                                 friend.updateChatPublicKey(getApplicationContext());
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             } catch (ContactNotFoundException e) {
-                                showToast("Could not find this contact. Make sure he/she is online");
+                                showToast("Não foi possível encontrar o contato. Certifique-se de que ele/ela está online");
                             }
 
                         }
@@ -391,6 +424,5 @@ public class ChatActivity extends BaseActivity implements ChatMvpView{
             }
         }
     }
-
 
 }

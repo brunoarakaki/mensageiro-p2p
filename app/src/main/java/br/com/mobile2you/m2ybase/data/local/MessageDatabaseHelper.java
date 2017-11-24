@@ -41,7 +41,9 @@ public class MessageDatabaseHelper {
                 Constants.DB_MESSAGES_FIELD_SENDER_ID + " = ? AND " +
                 Constants.DB_MESSAGES_FIELD_RECEIVER_ID + " = ?)",  new String[] {
                 sender_id, user_id, user_id, sender_id });
-        return convertCursorToMessages(cursor);
+        List<MessageResponse> messages = convertCursorToMessages(cursor);
+        db.close();
+        return messages;
     }
 
 

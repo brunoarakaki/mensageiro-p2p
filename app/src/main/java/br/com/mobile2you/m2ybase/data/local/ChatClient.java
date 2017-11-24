@@ -13,8 +13,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 import br.com.mobile2you.m2ybase.data.remote.models.BaseResponse;
-import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
-import br.com.mobile2you.m2ybase.data.remote.models.SignatureResponse;
 
 public class ChatClient {
 

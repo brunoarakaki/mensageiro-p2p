@@ -2,6 +2,7 @@
     <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="horizontal_margin">16dp</dimen>
     <dimen name="vertical_margin">16dp</dimen>
+    <dimen name="vertical_item_space">2dp</dimen>
 
     <!--TEXT SIZES-->
     <dimen name="text_headline">30sp</dimen>

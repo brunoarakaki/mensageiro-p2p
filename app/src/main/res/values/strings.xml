@@ -10,6 +10,7 @@
     <string name="menu_direct_connection">Conexão direta</string>
 
     <string name="menu_sign_key">Assinar certificado</string>
+    <string name="menu_trusted">Confiavel</string>
 
     <string name="contact_name">Nome do Contato</string>
     <string name="contact_ip_address">Endereço IP</string>

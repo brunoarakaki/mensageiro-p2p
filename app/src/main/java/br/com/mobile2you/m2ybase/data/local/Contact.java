@@ -22,6 +22,7 @@ public class Contact implements Serializable {
     private int port;
     private byte[] signPublicKeyEncoded;
     private byte[] chatPublicKeyRingEncoded;
+    private boolean trust;
 
     public Contact(String id) {
         super();
@@ -76,6 +77,14 @@ public class Contact implements Serializable {
 
     public void setChatPublicKeyRingEncoded(byte[] chatPublicKeyRingEncoded) {
         this.chatPublicKeyRingEncoded = chatPublicKeyRingEncoded;
+    }
+
+    public boolean isTrusted() {
+        return trust;
+    }
+
+    public void setTrust(boolean trust) {
+        this.trust = trust;
     }
 
     public void save(Context context) {

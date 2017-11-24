@@ -56,6 +56,7 @@ import br.com.mobile2you.m2ybase.data.remote.models.SignatureResponse;
 import br.com.mobile2you.m2ybase.ui.base.BaseActivity;
 import br.com.mobile2you.m2ybase.ui.chat.ChatActivity;
 import br.com.mobile2you.m2ybase.ui.common.TrustDialogFragment;
+import br.com.mobile2you.m2ybase.ui.dht_visualization.DhtVisualizationActivity;
 import br.com.mobile2you.m2ybase.utils.exceptions.*;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -79,8 +80,8 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     @BindView(R.id.recyclerview)
     RecyclerView mRecyclerView;
 
-//    public String trackerAddress = "13.59.232.73";
-    public String trackerAddress = "192.168.1.105";
+    public String trackerAddress = "13.59.232.73";
+//    public String trackerAddress = "10.10.185.83";
     public int trackerPort = 4001;
 
     @Override
@@ -161,6 +162,11 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         intent.putExtra(Constants.EXTRA_MYSELF, me);
         intent.putExtra(Constants.EXTRA_CONTACT, contact);
         intent.putExtra(Constants.EXTRA_DIRECT_CONNECTION, directConnection);
+        startActivity(intent);
+    }
+
+    public void startDhtVisualization() {
+        Intent intent = new Intent(MainActivity.this, DhtVisualizationActivity.class);
         startActivity(intent);
     }
 
@@ -301,16 +307,20 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
         alertDialogBuilder.setView(dialogView);
 
-        final EditText userInput = (EditText) dialogView
+        final EditText editTextUserName = (EditText) dialogView
                 .findViewById(R.id.edit_text_user_name);
+        final EditText editTextPassword = (EditText) dialogView
+                .findViewById(R.id.edit_text_user_password);
 
         // set dialog message
         alertDialogBuilder
                 .setCancelable(false)
                 .setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog,int id) {
-                        String userName = userInput.getText().toString();
+                        String userName = editTextUserName.getText().toString();
                         PreferencesHelper.getInstance().putUserId(userName);
+                        String userPassword = editTextPassword.getText().toString();
+                        PreferencesHelper.getInstance().putUserPassword(userPassword);
                         mUserId = userName;
                         initialize();
                     }
@@ -416,6 +426,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     }
 
     public void deleteContact(Contact contact){
+        mMainPresenter.deleteConversation(this, contact);
         mMainPresenter.deleteContact(this, contact);
     }
 
@@ -424,16 +435,20 @@ public class MainActivity extends BaseActivity implements MainMvpView {
     }
 
     public void createDirectConnection(String name, String ip, int port) {
-        Contact contact = new Contact(name);
-        contact.setIp(ip);
-        contact.setPort(port);
-        startChat(contact, true);
+        try {
+            if (DHT.connectTo(ip, port)) {
+                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(new Intent(Constants.FILTER_DHT_CONNECTION));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void buildPGPManager() {
         try {
             progressDialog.show("Obtendo chaves de segurança...");
-            PGPManagerSingleton.initialize(new PGPManager(this.getApplicationContext(), PreferencesHelper.getInstance().getUserId(), "12345".toCharArray()));
+            String userPassword = PreferencesHelper.getInstance().getUserPassword();
+            PGPManagerSingleton.initialize(new PGPManager(this.getApplicationContext(), PreferencesHelper.getInstance().getUserId(),userPassword.toCharArray()));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -465,11 +480,11 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                     if (DHT.connectTo(trackerAddress, trackerPort)) {
                         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(new Intent(Constants.FILTER_DHT_CONNECTION));
                     }
-                    nodeDiscovery.startLookup();
+                    //nodeDiscovery.startLookup();
                 } catch (DHTException.UsernameAlreadyTakenException e) {
-                    showToast("Username already taken!");
+                    showToast("Usuário não está disponível!");
                 } catch (KeyPairNullException e) {
-                    showToast("Couldn' generate KeyPair!");
+                    showToast("Não foi possível gerar chaves DSA!");
                     e.printStackTrace();
                 } catch (ClassNotFoundException | IOException e) {
                     e.printStackTrace();
@@ -501,15 +516,9 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                 showEditUserNameDialog();
                 break;
             case R.id.action_view_dht:
+                startDhtVisualization();
                 break;
             case R.id.action_reconnect:
-                ProgressDialogHelper pd = new ProgressDialogHelper(this);
-                pd.show("Conectando à rede...", 10000, new Runnable() {
-                    @Override
-                    public void run() {
-                        showMessage("Não foi possível conectar na rede DHT!");
-                    }
-                });
                 connectToDHT();
                 break;
             case R.id.action_view_certificate:
@@ -575,7 +584,7 @@ public class MainActivity extends BaseActivity implements MainMvpView {
         @Override
         public void onReceive(Context context, Intent intent) {
             MessageResponse mes = (MessageResponse) intent.getSerializableExtra("message");
-            showToast("New message received from " + mes.getSender().getId());
+            showToast("Nova mensagem recebida de " + mes.getSender().getId());
             ContactDatabaseHelper dbHelper = new ContactDatabaseHelper(context);
             if (dbHelper.search(mes.getSender().getId()).isEmpty()) {
                 mMainPresenter.addContact(getApplicationContext(), mes.getSender());
@@ -591,9 +600,9 @@ public class MainActivity extends BaseActivity implements MainMvpView {
                 SignatureResponse mes = (SignatureResponse) intent.getSerializableExtra("message");
                 me.setChatPublicKeyRingEncoded(PGPManagerSingleton.getInstance().getPublicKeyRing().getEncoded());
                 if (mes.getTrust()) {
-                    showToast(mes.getIdentifier() + " just signed your certificate");
+                    showToast(mes.getIdentifier() + " acabou de assinar seu certificado!");
                 } else {
-                    showToast(mes.getIdentifier() + " just revoked his/her signature from your certificate");
+                    showToast(mes.getIdentifier() + " acabou de revocar a assinatura em seu certificado!");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -605,30 +614,35 @@ public class MainActivity extends BaseActivity implements MainMvpView {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            progressDialog.hide();
-            try {
-                DHT.verify();
-                Log.i("DHT", "[DHT] Broadcasting my chat address: " + me.getIp() + ":" + mChatPort);
-                FuturePut fput = DHT.putProtected("chatAddress", new InetSocketAddress(me.getIp(), mChatPort));
-                if (fput.isFailed()) {
-                    Log.i("DHT", "[DHT] Chat address update failed: " + fput.failedReason());
-                    showMessage("Chat address update failed!");
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        DHT.verify();
+                        Log.i("DHT", "[DHT] Broadcasting my chat address: " + me.getIp() + ":" + mChatPort);
+                        FuturePut fput = DHT.putProtected("chatAddress", new InetSocketAddress(me.getIp(), mChatPort));
+                        if (fput.isFailed()) {
+                            Log.i("DHT", "[DHT] Chat address update failed: " + fput.failedReason());
+                            showMessage("Atualização de endereço de chat falhou!");
+                        }
+                        Log.i("DHT", "[DHT] Broadcasting my public chat key");
+                        fput = DHT.putProtected("chatPublicKey", PGPManagerSingleton.getInstance().getPublicKeyRing().getEncoded());
+                        if (fput.isFailed()) {
+                            Log.i("DHT", "[DHT] Chat public key update failed: " + fput.failedReason());
+                            showMessage("Atualização de chave PGP pública falhou!");
+                        }
+                        showMessage("Conectado à rede DHT!");
+                    } catch (DHTException.UsernameAlreadyTakenException e) {
+                        e.printStackTrace();
+                        showMessage("Nome de usuário não está disponível!");
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    progressDialog.hide();
                 }
-                Log.i("DHT", "[DHT] Broadcasting my public chat key");
-                fput = DHT.putProtected("chatPublicKey", PGPManagerSingleton.getInstance().getPublicKeyRing().getEncoded());
-                if (fput.isFailed()) {
-                    Log.i("DHT", "[DHT] Chat public key update failed: " + fput.failedReason());
-                    showMessage("Chat public key update failed!");
-                }
-                showMessage("Connected to DHT network!");
-            } catch (DHTException.UsernameAlreadyTakenException e) {
-                e.printStackTrace();
-                showMessage("Username already taken!");
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            }).start();
         }
     }
 }

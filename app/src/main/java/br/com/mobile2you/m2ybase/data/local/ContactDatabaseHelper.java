@@ -7,9 +7,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import br.com.mobile2you.m2ybase.Constants;
+import br.com.mobile2you.m2ybase.data.remote.models.MessageResponse;
 
 /**
  * Created by Bruno on 14-Aug-17.
@@ -36,7 +38,11 @@ public class ContactDatabaseHelper {
                 Constants.DB_CONTACT_FIELD_SIGN_ENCODED_KEY + ", " +
                 Constants.DB_CONTACT_FIELD_CHAT_ENCODED_KEY +
                 " from " + Constants.DB_CONTACTS_TABLE ,  new String[] {});
-        return convertCursorToContacts(cursor);
+
+        List<Contact> contacts = convertCursorToContacts(cursor);
+        db.close();
+
+        return contacts;
     }
 
 
@@ -95,7 +101,38 @@ public class ContactDatabaseHelper {
                 Constants.DB_CONTACT_FIELD_CHAT_ENCODED_KEY +
                 " from " + Constants.DB_CONTACTS_TABLE +
                 " where " + Constants.DB_CONTACT_FIELD_ID + " = '" + username + "'",  new String[] {});
-        return convertCursorToContacts(cursor);
+
+        List<Contact> contacts = convertCursorToContacts(cursor);
+        db.close();
+
+        return contacts;
+    }
+
+    public boolean isFriendWithUsers(ArrayList<String> usersList) {
+        SQLiteDatabase db = _openHelper.getReadableDatabase();
+        if (db == null) {
+            return false;
+        }
+
+        String users = "";
+        Iterator<String> it = usersList.iterator();
+        while (it.hasNext()) {
+            if (!users.equals("")) {
+                users += ",";
+            }
+            users += "'" + it.next() + "'";
+        }
+
+        Cursor cursor = db.rawQuery("select * " +
+                "from "+ Constants.DB_CONTACTS_TABLE + " " +
+                "where " + Constants.DB_CONTACT_FIELD_ID + " " +
+                "in (" + users + ")", new String[] {});
+
+        boolean isFriend = cursor.getCount() > 0;
+
+        db.close();
+
+        return isFriend;
     }
 
     private ContentValues convertContactToContentValues(Contact contact) throws IOException {

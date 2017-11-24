@@ -6,6 +6,6 @@
     <item
         android:id="@+id/action_sign_key"
         android:title="@string/menu_sign_key"
-        android:icon="@drawable/ic_add_person"
+        android:icon="@drawable/ic_security"
         app:showAsAction="always" />
 </menu>

@@ -12,7 +12,7 @@
             </packagesToUnSeal>
         </sealing>
     </manifest>
-    <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
+    <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
         <file path="/DHTBase/.DS_Store"/>
         <file path="/DHTBase/DHTBase.jardesc"/>
         <javaElement handleIdentifier="=DHTBase/src"/>
