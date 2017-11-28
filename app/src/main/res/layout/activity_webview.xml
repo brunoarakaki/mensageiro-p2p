@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="br.com.mobile2you.m2ybase.activities.WebViewActivity">
+    tools:context="poli.com.mobile2you.whatsp2p.com.mobile2you.whatsp2p.activities.WebViewActivity">
 
     <include layout="@layout/partial_toolbar"/>
 

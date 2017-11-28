@@ -6,7 +6,7 @@
                 android:background="@color/color_black"
                 android:visibility="gone" >
 
-    <br.com.mobile2you.m2ybase.ui.widget.TouchImageView
+    <com.poli.usp.whatsp2p.ui.widget.TouchImageView
         android:id="@+id/expanded_image_tiv"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

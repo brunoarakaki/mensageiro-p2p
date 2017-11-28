@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:orientation="vertical"
     android:layout_height="match_parent"
-    tools:context="br.com.mobile2you.m2ybase.ui.chat.ChatActivity">
+    tools:context="poli.com.mobile2you.whatsp2p.com.mobile2you.whatsp2p.ui.chat.ChatActivity">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar"

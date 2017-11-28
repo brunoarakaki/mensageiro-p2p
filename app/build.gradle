@@ -24,7 +24,7 @@ android {
     buildToolsVersion "25.0.2"
 
     defaultConfig {
-        applicationId "br.com.mobile2you.m2ybase"
+        applicationId "com.poli.usp.whatsp2p"
         minSdkVersion 23
         targetSdkVersion 25
         versionCode 1

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="br.com.mobile2you.m2ybase">
+          package="poli.com.mobile2you.whatsp2p">
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -16,13 +16,13 @@
     <!-- MUDAR NOME PACOTE -->
     <!-- <uses-permission android:name="br.com.mobile2you.pizzaprime.pizzaprime.permission.C2D_MESSAGE" /> -->
     <application
-        android:name=".BaseApplication"
+        android:name="com.poli.usp.whatsp2p.BaseApplication"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ui.main.MainActivity">
+        <activity android:name="com.poli.usp.whatsp2p.ui.main.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -34,8 +34,8 @@
             android:name="io.fabric.ApiKey"
             android:value="d9aa34977d8b9166187cc83674aea00089585509"/>
 
-        <activity android:name=".ui.chat.ChatActivity"/>
-        <activity android:name=".ui.dht_visualization.DhtVisualizationActivity">
+        <activity android:name="com.poli.usp.whatsp2p.ui.chat.ChatActivity"/>
+        <activity android:name="com.poli.usp.whatsp2p.ui.dht_visualization.DhtVisualizationActivity">
         </activity>
     </application>
 

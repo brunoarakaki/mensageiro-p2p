@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="br.com.mobile2you.m2ybase.ui.dht_visualization.DhtVisualizationActivity">
+    tools:context="poli.com.mobile2you.whatsp2p.com.mobile2you.whatsp2p.ui.dht_visualization.DhtVisualizationActivity">
 
     <RelativeLayout
         android:layout_width="match_parent"

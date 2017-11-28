@@ -2,7 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".ui.chat.ChatActivity">
+    tools:context="com.poli.usp.whatsp2p.ui.chat.ChatActivity">
     <item
         android:id="@+id/action_sign_key"
         android:title="@string/menu_sign_key"
