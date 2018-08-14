@@ -67,8 +67,8 @@ public class ChatClient {
                     throw new CouldNotEncryptException();
                 }
                 DataOutputStream dOut = new DataOutputStream(this.client.getOutputStream());
-                dOut.writeInt(serializedMessage.length); // write length of the message
-                dOut.write(serializedMessage);            // write the message
+                dOut.writeInt(encryptedMessage.length); // write length of the message
+                dOut.write(encryptedMessage);            // write the message
                 return true;
             }
         } catch (IOException | CouldNotEncryptException | NoSuchProviderException | PGPException e) {
